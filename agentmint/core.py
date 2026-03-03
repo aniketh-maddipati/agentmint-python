@@ -313,6 +313,11 @@ class AgentMint:
             console.verify_ok(receipt.id)
         return True
 
+    @property
+    def receipts(self) -> list[Receipt]:
+        """Return all issued receipts as an ordered list (insertion order)."""
+        return list(self._receipts.values())
+
     def audit(self, receipt: Receipt) -> list[Receipt]:
         """Get full authorization chain from root to this receipt."""
         chain = []
