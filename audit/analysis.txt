@@ -1,0 +1,28 @@
+AWS EC2 Security Best Practices:
+
+1. **Use AWS Security Hub**: Utilize AWS Security Hub CSPM controls to monitor your Amazon EC2 resources against security best practices and standards.
+Reference: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-best-practices.html
+
+2. **Configure EC2 for Security and Compliance**: Set up Amazon EC2 to meet specific security and compliance objectives. Learn to use other AWS services to enhance EC2 security.
+Reference: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-security.html
+
+3. **Encrypt Data Volumes**: Protect data from unauthorized access by encrypting the volumes where your data resides.
+Reference: https://repost.aws/questions/QULMVAX43KRL21x1C0V-QpFA/securing-my-ec2-instances
+
+4. **Rotate Access Keys**: Regularly rotate access keys (preferably every 90 days) to minimize risk associated with compromised keys.
+Reference: https://www.sysdig.com/blog/26-aws-security-best-practices
+
+5. **Monitor Network Traffic**: Implement measures to monitor network traffic effectively, protecting against potential threats and attacks.
+Reference: https://www.upwind.io/glossary/what-is-aws-ec2-security
+
+6. **Utilize Security Groups**: Use security groups as a firewall to control traffic to and from your EC2 instances.
+Reference: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-security-groups.html
+
+7. **Remove Unused AMIs**: Identify and eliminate unused Amazon Machine Images (AMIs) to enhance security and optimize costs.
+Reference: https://www.trendmicro.com/trendaivisiononecloudriskmanagement/knowledge-base/aws/EC2/
+
+8. **Access Management**: Control access rigorously, utilizing IAM roles and best practices in access management.
+Reference: https://medium.com/@tahirbalarabe2/best-security-practices-for-amazon-ec2-1362d0c3b428
+
+9. **Firewalls and Network Segmentation**: Use Security Groups for firewalls and Network ACLs to block access at the subnet level.
+Reference: https://community.observeinc.com/t/best-practices-for-securing-aws-instances-behind-a-firewall/371
