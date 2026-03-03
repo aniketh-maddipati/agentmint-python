@@ -1,0 +1,40 @@
+AWS Infrastructure Inventory:
+
+1. EC2 Instances:
+   - Instance ID: i-0abcd1234efgh5678
+     Type: t2.micro
+     State: running
+     Private IP: 192.168.1.1
+     Public IP: 52.12.34.56
+   - Instance ID: i-0ijkl9012mnop3456
+     Type: t2.small
+     State: stopped
+     Private IP: 192.168.1.2
+     Public IP: N/A
+   - Instance ID: i-0qrst7890uvwx1234
+     Type: t2.medium
+     State: running
+     Private IP: 192.168.1.3
+     Public IP: 54.23.45.67
+
+2. S3 Buckets:
+   - Bucket Name: my-first-bucket
+     Region: us-west-2
+     Creation Date: 2021-05-01
+   - Bucket Name: my-second-bucket
+     Region: us-east-1
+     Creation Date: 2022-03-15
+
+3. RDS Instance:
+   - DB Instance Identifier: my-database
+     Engine: mysql
+     Status: available
+     Endpoint: my-database.abc123xyz.us-east-1.rds.amazonaws.com
+
+4. IAM Policies:
+   - Policy Name: AdminPolicy
+     Policy ID: abcdefghijklmnopqrs
+     Description: Grants full access to AWS services.
+   - Policy Name: ReadOnlyPolicy
+     Policy ID: tuvwxzyabcdefg
+     Description: Grants read-only access to AWS services.

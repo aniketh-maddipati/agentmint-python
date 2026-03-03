@@ -21,7 +21,7 @@ DEFAULT_TTL = 60
 MAX_SUB_LEN = 256
 MAX_ACTION_LEN = 64
 MAX_JTI_CAPACITY = 10_000
-ALLOWED_CHARS = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_:-")
+ALLOWED_CHARS = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_:-.")
 
 
 def _validate_sub(sub: str) -> None:
