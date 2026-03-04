@@ -1,14 +1,12 @@
 """AgentMint MCP Server - Cryptographic authorization for AI agents."""
-
-from typing import Optional
+import os
 from fastmcp import FastMCP
 from fastmcp.exceptions import ToolError
-from agentmint import AgentMint, DelegationStatus
+from agentmint import AgentMint
 
 mcp = FastMCP("AgentMint")
 _mint = AgentMint(quiet=True)
 _plans = {}
-
 
 @mcp.tool()
 def agentmint_issue_plan(
@@ -33,7 +31,6 @@ def agentmint_issue_plan(
     _plans[plan.id] = plan
     return {"plan_id": plan.id, "scope": scope, "delegates_to": delegates_to}
 
-
 @mcp.tool()
 def agentmint_request_authorization(plan_id: str, agent: str, action: str) -> dict:
     """Agent requests authorization before taking an action."""
@@ -42,12 +39,10 @@ def agentmint_request_authorization(plan_id: str, agent: str, action: str) -> di
         return {"authorized": False, "reason": "plan_not_found"}
     if plan.is_expired:
         return {"authorized": False, "reason": "plan_expired"}
-
     result = _mint.delegate(plan, agent, action)
     if result.ok:
         return {"authorized": True, "receipt_id": result.receipt.short_id}
     return {"authorized": False, "reason": result.status.value}
-
 
 @mcp.tool()
 def agentmint_audit(plan_id: str = None) -> dict:
@@ -59,6 +54,6 @@ def agentmint_audit(plan_id: str = None) -> dict:
         return {"receipts": [{"id": r.short_id, "sub": r.sub, "action": r.action} for r in _mint.audit(plan)]}
     return {"plans": list(_plans.keys())}
 
-
 if __name__ == "__main__":
-    mcp.run()
+    port = int(os.environ.get("PORT", 8000))
+    mcp.run(transport="sse", host="0.0.0.0", port=port)
