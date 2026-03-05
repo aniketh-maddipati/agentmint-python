@@ -1,12 +1,25 @@
-"""AgentMint MCP Server - Cryptographic authorization for AI agents."""
+"""
+AgentMint MCP Server
+Cryptographic authorization for AI agents.
+https://agent-mint.dev
+"""
+
 import os
 from fastmcp import FastMCP
 from fastmcp.exceptions import ToolError
 from agentmint import AgentMint
 
+# ─────────────────────────────────────────────────────────────
+# Server setup
+# ─────────────────────────────────────────────────────────────
+
 mcp = FastMCP("AgentMint")
-_mint = AgentMint(quiet=True)
-_plans = {}
+mint = AgentMint(quiet=True)
+plans = {}
+
+# ─────────────────────────────────────────────────────────────
+# Tools
+# ─────────────────────────────────────────────────────────────
 
 @mcp.tool()
 def agentmint_issue_plan(
@@ -18,8 +31,8 @@ def agentmint_issue_plan(
     ttl: int = 300,
     max_depth: int = 2,
 ) -> dict:
-    """Human approves a scoped authorization plan for agents."""
-    plan = _mint.issue_plan(
+    """Human approves a scoped authorization plan."""
+    plan = mint.issue_plan(
         action=action,
         user=user,
         scope=scope,
@@ -28,32 +41,48 @@ def agentmint_issue_plan(
         max_depth=max_depth,
         ttl=min(max(ttl, 1), 300),
     )
-    _plans[plan.id] = plan
+    plans[plan.id] = plan
     return {"plan_id": plan.id, "scope": scope, "delegates_to": delegates_to}
 
+
 @mcp.tool()
-def agentmint_request_authorization(plan_id: str, agent: str, action: str) -> dict:
-    """Agent requests authorization before taking an action."""
-    plan = _plans.get(plan_id)
+def agentmint_authorize(plan_id: str, agent: str, action: str) -> dict:
+    """Agent requests authorization before acting."""
+    plan = plans.get(plan_id)
+    
     if not plan:
         return {"authorized": False, "reason": "plan_not_found"}
     if plan.is_expired:
         return {"authorized": False, "reason": "plan_expired"}
-    result = _mint.delegate(plan, agent, action)
+    
+    result = mint.delegate(plan, agent, action)
+    
     if result.ok:
         return {"authorized": True, "receipt_id": result.receipt.short_id}
     return {"authorized": False, "reason": result.status.value}
 
+
 @mcp.tool()
 def agentmint_audit(plan_id: str = None) -> dict:
     """View authorization audit trail."""
-    if plan_id:
-        plan = _plans.get(plan_id)
-        if not plan:
-            raise ToolError(f"Plan not found: {plan_id}")
-        return {"receipts": [{"id": r.short_id, "sub": r.sub, "action": r.action} for r in _mint.audit(plan)]}
-    return {"plans": list(_plans.keys())}
+    if not plan_id:
+        return {"plans": list(plans.keys())}
+    
+    plan = plans.get(plan_id)
+    if not plan:
+        raise ToolError(f"Plan not found: {plan_id}")
+    
+    receipts = [
+        {"id": r.short_id, "agent": r.sub, "action": r.action}
+        for r in mint.audit(plan)
+    ]
+    return {"plan_id": plan_id, "receipts": receipts}
+
+
+# ─────────────────────────────────────────────────────────────
+# Run with HTTP transport (Streamable HTTP - newer standard)
+# ─────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
-    mcp.run(transport="sse", host="0.0.0.0", port=port)
+    mcp.run(transport="http", host="0.0.0.0", port=port)
