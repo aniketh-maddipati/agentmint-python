@@ -1,93 +1,83 @@
 # agentmint
 
-IAM for AI agents. Cryptographic delegation with audit trail.
-
-![AgentMint Demo](demo.gif)
+Cryptographic notary for AI agent actions. Tamper-evident, AIUC-1-tagged evidence receipts — generated passively, verified independently.
 
 ## The problem
 
-MCP gives agents access to Gmail, Slack, databases. CrewAI chains agents autonomously. Permissions today are all-or-nothing.
+AI agent certifications like AIUC-1 require quarterly re-testing. Every 90 days, someone rebuilds an evidence package from scratch — manually reconstructing what the agent did, which controls fired, which actions were in-policy. It's expensive, slow, and entirely dependent on trusting whoever wrote the report.
 
-Give an agent file access → it reads everything.
-Give it email access → it sends as you.
-One prompt injection → full access.
-
-Two bad options:
-1. Trust the agent completely
-2. Approve every single action
-
-There's no way to say "read reports, not secrets" and have that enforced *before* actions execute.
+There's no continuous, cryptographically verifiable audit trail. Until now.
 
 ## What agentmint does
+
+AgentMint sits passively alongside existing agent infrastructure. It never wraps API calls, never blocks actions, never creates an availability dependency. It observes what happened and signs evidence after the fact.
+
 ```
-Human approves plan → Agent requests authorization → Action executes (or blocks)
-                                ↓
-                    Cryptographic receipt (Ed25519)
-```
-
-- **Scoped delegation**: define what actions are allowed
-- **Checkpoints**: sensitive actions require human approval
-- **Receipts**: every action is signed and auditable
-- **Framework agnostic**: works with MCP, CrewAI, raw API calls
-
-## Usage
-```python
-from agentmint import AgentMint
-
-mint = AgentMint()
-
-# Human approves a scoped plan
-plan = mint.issue_plan(
-    action="file-analysis",
-    user="manager@company.com",
-    scope=["read:public:*", "write:summary:*"],
-    delegates_to=["claude-sonnet-4-20250514"],
-    requires_checkpoint=["read:secret:*", "delete:*"],
-)
-
-# Agent requests authorization before acting
-result = mint.delegate(plan, "claude-sonnet-4-20250514", "read:public:report.txt")
-
-if result.ok:
-    # proceed with action
-    # result.receipt contains Ed25519 signed proof
-    pass
-else:
-    # blocked: result.reason explains why
-    pass
-
-# Audit trail
-for receipt in mint.audit(plan):
-    print(receipt.action, receipt.signature)
+Agent calls ElevenLabs API normally
+         ↓
+API response returns
+         ↓
+AgentMint reads response → evaluates policy → builds receipt
+         ↓
+Ed25519 signature  +  RFC 3161 timestamp (FreeTSA)  +  SHA-256 commitment hashes
+         ↓
+Anchored receipt written to local evidence package
 ```
 
-## How it works
+Every receipt is independently verifiable with a single OpenSSL command. No AgentMint infrastructure required. Receipts remain valid forever.
 
-1. **Plan issuance**: Human approves a scoped authorization plan. The plan specifies allowed actions (scope) and actions requiring escalation (checkpoints).
+## Tamper-evidence: three independent anchors
 
-2. **Delegation**: Before executing an action, the agent calls `mint.delegate()`. AgentMint checks if the action matches the scope. If it matches a checkpoint pattern, it's blocked unless explicitly approved.
+**Anchor 1 — Ed25519 signature**
+AgentMint signs every receipt at generation with a private key that never leaves the customer machine. Any modification to any field breaks the signature immediately.
 
-3. **Receipts**: Every successful delegation produces an Ed25519 signed receipt. Receipts chain back to the original plan. The chain is independently verifiable.
+**Anchor 2 — RFC 3161 timestamp**
+The SHA-512 hash of the signed receipt goes to FreeTSA — an independent third party neither AgentMint nor the customer controls. The returned token cryptographically proves that exact receipt existed at that exact moment. Backdating is impossible.
+
+**Anchor 3 — Commitment scheme**
+Receipts contain SHA-256 hashes of evidence components, not raw content. No sensitive data leaves the customer environment. Anyone with the original evidence can verify the receipt is consistent with what happened.
+
+## Verify receipts
+
+```bash
+./VERIFY.sh
 ```
-plan (root)
-├─ id:        4388f437-3679-4c96-9d9e-8736503bbceb
-├─ sub:       manager@company.com
-├─ signature: f1958df50730fc2b4fbec0a92178fc2a...
-│
-└─ delegation
-   ├─ id:        15ac1666-04b3-4c7d-adb3-cfed52ac34bf
-   ├─ parent_id: 4388f437-3679-4c96-9d9e-8736503bbceb
-   ├─ sub:       claude-sonnet-4-20250514
-   ├─ action:    read:public:report.txt
-   └─ signature: e2aa114cc339fefd3d171474cceff961...
+
+One command. Pure OpenSSL against FreeTSA's public CA cert. No Python. No trust in AgentMint.
+
 ```
+Receipts verified: 4
+Out-of-policy actions flagged: 2
+Verification timestamp: 2026-03-05T14:32:01Z
+```
+
+## Demo scenarios
+
+| Scenario | What happens | Receipt outcome |
+|---|---|---|
+| Normal TTS call | Real ElevenLabs TTS call | `in_policy: true` |
+| Voice clone attempt | ElevenLabs returns 403 | `in_policy: false` — violation recorded |
+| Claude reads clean doc | Normal TTS tool call | `in_policy: true` |
+| Claude reads injected doc | Prompt injection → clone attempt | `in_policy: false, violation_type: prompt_injection` |
+
+## AIUC-1 control mapping
+
+Every receipt tags three controls automatically from publicly available API output:
+
+| Receipt field | AIUC-1 control | How it evidences the control |
+|---|---|---|
+| `action_type` | E015 | Records the category of agent action taken |
+| `in_policy` | B001 | Boolean outcome of policy evaluation at action time |
+| `source_log_hash` | D003 | Commits to ElevenLabs server-side log at notarisation moment |
 
 ## Install
+
 ```bash
 pip install agentmint
 ```
 
 Or from source:
+
 ```bash
 git clone https://github.com/aniketh-maddipati/agentmint-python
 cd agentmint-python
@@ -95,20 +85,38 @@ pip install -e .
 ```
 
 ## Run the demo
+
 ```bash
 export ANTHROPIC_API_KEY=your-key
-python examples/mcp_real_demo.py
+export ELEVENLABS_API_KEY=your-key
+python examples/elevenlabs_demo.py
 ```
 
-The demo shows Claude attempting to read files with AgentMint gating access. Secrets are blocked. Public files are read. Every action has a receipt.
+## Architecture
+
+AgentMint is a notary, not a gatekeeper.
+
+| Model | How it works | Why it matters |
+|---|---|---|
+| Gatekeeper (rejected) | Sits between agent and API. Every call requires authorization. | AgentMint going down takes your product down. Unacceptable. |
+| Notary (correct) | Reads the response after the fact. Issues signed receipt. Never in the call path. | No availability dependency. Receipts stay with you. No data leaves your environment. |
+
+## Key design decisions
+
+**Receipts stay with the customer.** AgentMint holds nothing. The only outbound call is a SHA-512 hash to FreeTSA.
+
+**No sensitive content in receipts.** Commitment hashes only. Receipts can be shared freely with auditors and insurers without exposing implementation details.
+
+**Verification requires no AgentMint infrastructure.** The Ed25519 public key is 32 bytes. The FreeTSA CA cert is public. If AgentMint ceases to exist tomorrow, every receipt ever generated remains independently verifiable forever.
+
+**Platform agnostic.** The receipt schema has no ElevenLabs-specific fields. Adding a new platform is a new ingestion adapter — days, not months.
 
 ## Status
 
-Early stage. Core protocol works. Looking for real use cases.
+MVP. Four demo scenarios working end to end against ElevenLabs' public API.
 
-If you're building agents that need scoped permissions — file access, API calls, actions on behalf of users — I want to hear from you.
+Built for AIUC-1 certification evidence. If you're deploying agents in regulated industries and quarterly re-testing is painful, reach out.
 
 ## Contact
 
 [linkedin.com/in/anikethmaddipati](https://linkedin.com/in/anikethmaddipati)
-
