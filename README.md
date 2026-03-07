@@ -1,86 +1,145 @@
-# agentmint
+# AgentMint
 
-IAM for AI agents. Cryptographic delegation with audit trail.
+**Open-source cryptographic notary for AI agent actions.**
 
-![AgentMint Demo](demo.gif)
+No standard evidence format exists for AIUC-1 audits. Every certified company builds custom. AgentMint generates it automatically.
 
-## The problem
+Passive notary — never in the call path. Ed25519 signed. RFC 3161 timestamped. Verifiable with OpenSSL alone. Receipts stay with the customer. AgentMint holds nothing.
 
-MCP gives agents access to Gmail, Slack, databases. CrewAI chains agents autonomously. Permissions today are all-or-nothing.
+**[GitHub](https://github.com/aniketh-maddipati/agentmint-python)** | **[One-Pager](https://agentmint-brief-builder.lovable.app/)**
 
-Give an agent file access → it reads everything.
-Give it email access → it sends as you.
-One prompt injection → full access.
+---
 
-Two bad options:
-1. Trust the agent completely
-2. Approve every single action
+## What it does
 
-There's no way to say "read reports, not secrets" and have that enforced *before* actions execute.
+Agent calls the API normally. After it returns, AgentMint reads the response, evaluates policy, signs a receipt, and timestamps it via an independent authority. ~400ms. Zero changes to the call path.
 
-## What agentmint does
+Three anchors per receipt:
+- **Ed25519 signature** — any modification breaks it instantly
+- **RFC 3161 timestamp** — independent authority, backdating impossible
+- **Commitment hashes** — receipts contain hashes, not content. Nothing sensitive leaves
+
+---
+
+## Architecture
+
+AgentMint has two layers that coexist:
+
+**Gatekeeper (`core.py`)** — Authorization *before* the action. Scoped delegation, checkpoints, replay protection. "Should this agent be allowed to do this?"
+
+**Notary (`notary.py`)** — Evidence *after* the action. Passive receipt generation, policy evaluation, cryptographic signing, RFC 3161 timestamping. "Prove this agent did this, and prove the receipt hasn't been tampered with."
 ```
-Human approves plan → Agent requests authorization → Action executes (or blocks)
-                                ↓
-                    Cryptographic receipt (Ed25519)
-```
-
-- **Scoped delegation**: define what actions are allowed
-- **Checkpoints**: sensitive actions require human approval
-- **Receipts**: every action is signed and auditable
-- **Framework agnostic**: works with MCP, CrewAI, raw API calls
-
-## Usage
-```python
-from agentmint import AgentMint
-
-mint = AgentMint()
-
-# Human approves a scoped plan
-plan = mint.issue_plan(
-    action="file-analysis",
-    user="manager@company.com",
-    scope=["read:public:*", "write:summary:*"],
-    delegates_to=["claude-sonnet-4-20250514"],
-    requires_checkpoint=["read:secret:*", "delete:*"],
-)
-
-# Agent requests authorization before acting
-result = mint.delegate(plan, "claude-sonnet-4-20250514", "read:public:report.txt")
-
-if result.ok:
-    # proceed with action
-    # result.receipt contains Ed25519 signed proof
-    pass
-else:
-    # blocked: result.reason explains why
-    pass
-
-# Audit trail
-for receipt in mint.audit(plan):
-    print(receipt.action, receipt.signature)
+agentmint/
+├── core.py            # Gatekeeper: scoped delegation, checkpoints, replay protection
+├── notary.py          # Notary: passive receipt generation, policy evaluation
+├── anchor.py          # RFC 3161 timestamping (FreeTSA + DigiCert fallback)
+├── commitment.py      # SHA-256 commitment scheme (hash-only receipts)
+├── batch.py           # Batch mode: scenario loading, execution, aggregation
+├── export.py          # Evidence ZIP packaging
+├── keystore.py        # Ed25519 key persistence (generate once, load thereafter)
+├── receipt_store.py   # JSONL append-only receipt persistence
+├── types.py           # Data types and enums
+├── errors.py          # Exception hierarchy
+├── console.py         # Terminal output formatting
+└── decorator.py       # @require_receipt decorator
 ```
 
-## How it works
+---
 
-1. **Plan issuance**: Human approves a scoped authorization plan. The plan specifies allowed actions (scope) and actions requiring escalation (checkpoints).
-
-2. **Delegation**: Before executing an action, the agent calls `mint.delegate()`. AgentMint checks if the action matches the scope. If it matches a checkpoint pattern, it's blocked unless explicitly approved.
-
-3. **Receipts**: Every successful delegation produces an Ed25519 signed receipt. Receipts chain back to the original plan. The chain is independently verifiable.
+## Demo — real APIs, no mocks
 ```
-plan (root)
-├─ id:        4388f437-3679-4c96-9d9e-8736503bbceb
-├─ sub:       manager@company.com
-├─ signature: f1958df50730fc2b4fbec0a92178fc2a...
-│
-└─ delegation
-   ├─ id:        15ac1666-04b3-4c7d-adb3-cfed52ac34bf
-   ├─ parent_id: 4388f437-3679-4c96-9d9e-8736503bbceb
-   ├─ sub:       claude-sonnet-4-20250514
-   ├─ action:    read:public:report.txt
-   └─ signature: e2aa114cc339fefd3d171474cceff961...
+$ python -m agentmint.batch scenarios/elevenlabs_quarterly.yaml
+
+Loading scenarios... 4 scenarios, 80 executions
+Running against live APIs...
+
+✓ tts:standard     ElevenLabs TTS           [in-policy]    E015,D003,B001
+✗ voice:clone      Clone attempt → 401      [VIOLATION]    E015,D004,E010
+✓ tts:standard     Claude + clean doc       [in-policy]    E015,D003,B001
+✗ tts:standard     Prompt injection caught  [VIOLATION]    E015,D004,B001
+
+Receipts: 80 | In-policy: 68 | Violations: 12
+Evidence: agentmint_evidence_20260307.zip
+
+$ bash VERIFY.sh
+Receipts verified: 80/80 · Violations flagged: 12 · All signatures valid
 ```
+
+---
+
+## Receipt schema (v0.2)
+```json
+{
+  "receipt_id": "a1f7e3d2-8b4c-4e91-a6f0-3c9d5e2b1a08",
+  "schema_version": "0.2",
+  "action": "tts:standard",
+  "in_policy": true,
+  "violation_type": null,
+  "issued_at": "2026-03-06T04:08:45.221Z",
+  "api_provider": "ElevenLabs",
+  "api_endpoint": "/v1/text-to-speech/{voice_id}",
+  "agent_id": "elevenlabs-demo-agent",
+  "policy_id": "elevenlabs-voice-policy-v2.3",
+  "policy_version": "2.3",
+  "architecture_ref": "arch-doc-2026Q1",
+  "aiuc1_controls": ["E015", "D003", "B001"],
+  "batch_id": null,
+  "anchored": true,
+  "signature_ed25519": "e4a9b2c1d7f3...",
+  "tsr_token_ref": "receipt_001.tsr",
+  "content_hash": "sha256:7f83b165...",
+  "source_log_hash": "sha256:2c26b46b..."
+}
+```
+
+---
+
+## AIUC-1 Control Mapping
+
+| Receipt Field | Control | What It Proves |
+|---|---|---|
+| action + in_policy | E015 Action Logging | Every agent action logged with policy result |
+| violation_type | D004 Tool Call Testing | Unauthorized actions detected and recorded |
+| signature_ed25519 | B001 Adversarial Robustness | Evidence is tamper-evident and independently verifiable |
+| content_hash | D003 Restrict Unsafe Tool Calls | Tool call content committed without exposing it |
+| source_log_hash | B006 System Security | Cross-reference with provider logs detects manipulation |
+| tsr_token_ref | E010 Acceptable Use Policy | Independent timestamp proves evidence existed before dispute |
+| policy_id + version | E007 Change Management | Links each action to the specific policy version |
+| architecture_ref | E005 Cloud vs On-Prem | Links runtime evidence to architecture documentation |
+| agent_id | B005/B007 IAM/Access Control | Which agent acted, traceable to authorization chain |
+| aiuc1_controls | All | Machine-readable mapping enables automated compliance reporting |
+
+---
+
+## Evidence package
+```
+agentmint_evidence_20260307/
+├── receipt_index.json       # Aggregate summary — auditor reads first
+├── receipts/
+│   ├── receipt_001.json     # Individual signed receipt
+│   ├── receipt_001.tsr      # RFC 3161 timestamp token
+│   └── ...
+├── keys/
+│   └── public_key.pem       # Ed25519 public key
+├── certs/
+│   └── freetsa_cacert.pem   # TSA CA certificate (bundled)
+├── VERIFY.sh                # One-command verification — pure OpenSSL
+├── TAMPER_TEST.sh           # Automated tamper demonstration
+└── control_mapping.pdf      # AIUC-1 control mapping
+```
+
+---
+
+## Verify it yourself
+```bash
+unzip agentmint_evidence_20260307.zip
+bash VERIFY.sh
+# Receipts verified: 80/80 · Flagged: 12 · No AgentMint code needed
+```
+
+Pure OpenSSL. No Python. No trust in the founder.
+
+---
 
 ## Install
 ```bash
@@ -94,21 +153,76 @@ cd agentmint-python
 pip install -e .
 ```
 
-## Run the demo
-```bash
-export ANTHROPIC_API_KEY=your-key
-python examples/mcp_real_demo.py
+---
+
+## Quick start — Gatekeeper
+```python
+from agentmint import AgentMint
+
+mint = AgentMint()
+
+plan = mint.issue_plan(
+    action="file-analysis",
+    user="manager@company.com",
+    scope=["read:public:*", "write:summary:*"],
+    delegates_to=["claude-sonnet-4-20250514"],
+    requires_checkpoint=["read:secret:*", "delete:*"],
+)
+
+result = mint.delegate(plan, "claude-sonnet-4-20250514", "read:public:report.txt")
+if result.ok:
+    pass  # proceed — result.receipt contains Ed25519 signed proof
 ```
 
-The demo shows Claude attempting to read files with AgentMint gating access. Secrets are blocked. Public files are read. Every action has a receipt.
+---
+
+## Quick start — Notary
+```python
+from agentmint.notary import Notary
+
+notary = Notary(
+    policy_id="elevenlabs-voice-policy-v2.3",
+    policy_version="2.3",
+    architecture_ref="arch-doc-2026Q1",
+)
+
+# After your agent calls an API, notarize the action
+receipt = notary.notarize(
+    action="tts:standard",
+    api_provider="ElevenLabs",
+    api_endpoint="/v1/text-to-speech/{voice_id}",
+    agent_id="elevenlabs-demo-agent",
+    in_policy=True,
+    controls=["E015", "D003", "B001"],
+    content="The synthesized text content",
+    source_log="Provider response metadata",
+)
+```
+
+---
+
+## Who this is for
+
+**Agent startups shipping to enterprises** — Drop in a sidecar. Hand the auditor a zip.
+
+**Insurers underwriting AI risk** — Tamper-evident receipts. The forensic trail exists before the incident.
+
+**AIUC-1 ecosystem** — One evidence format. One verification command. Auditors know what to expect.
+
+---
 
 ## Status
 
-Early stage. Core protocol works. Looking for real use cases.
+Pre-revenue. Open source. Validating with AIUC-1 auditors and certified companies.
 
-If you're building agents that need scoped permissions — file access, API calls, actions on behalf of users — I want to hear from you.
+If you've been through AIUC-1 or are preparing — what did your evidence prep look like? [Open an issue](https://github.com/aniketh-maddipati/agentmint-python/issues) or DM me.
 
-## Contact
+---
 
-[linkedin.com/in/anikethmaddipati](https://linkedin.com/in/anikethmaddipati)
+## License
 
+MIT
+
+## Author
+
+[Aniketh Maddipati](https://linkedin.com/in/anikethmaddipati)
