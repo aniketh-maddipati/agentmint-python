@@ -15,7 +15,12 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
 ]
-dependencies = ["pynacl>=1.5.0"]
+dependencies = [
+    "elevenlabs>=2.38.0",
+    "pynacl>=1.5.0",
+    "python-dotenv>=1.2.2",
+    "rich>=14.3.3",
+]
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0.0"]
@@ -30,3 +35,8 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 include = ["agentmint*"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]

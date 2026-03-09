@@ -17,3 +17,10 @@ htmlcov/
 *.cast
 fly.toml
 .dockerignore
+
+# Evidence output
+evidence_output/
+
+# GitHub workflows (not ready)
+.github/
+.env
