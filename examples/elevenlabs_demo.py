@@ -224,6 +224,7 @@ def run_scenario(
     notary: Notary,
     plan: PlanReceipt,
     show_anatomy: bool = False,
+    injection_action: str | None = None,
 ) -> NotarisedReceipt:
     """Run one complete agent → TTS → notarise cycle."""
 
@@ -267,7 +268,13 @@ def run_scenario(
     p(0.3)
 
     # Step 3: Build evidence dict (observable facts only)
-    action_str = f"{action_type}:{voice_id[:8]}"
+    # If injection scenario, notarise what the document requested
+    # — not what Claude chose. The attempt is the evidence.
+    if injection_action:
+        action_str = injection_action
+        warn(f"Document requested {injection_action} — notarising the attempt")
+    else:
+        action_str = f"{action_type}:{voice_id[:8]}"
     evidence = {
         "voice_id":      voice_id,
         "action_type":   action_type,
@@ -564,6 +571,7 @@ def main() -> None:
     # Scenario 2: Injected document — violation recorded
     receipt_injected = run_scenario(
         label="Prompt Injection Attack",
+        injection_action="tts:clone:attacker_voice_xyz",
         document=INJECTED_DOC,
         claude=claude,
         eleven=eleven,
