@@ -64,8 +64,10 @@ Receipts: 80 | In-policy: 68 | Violations: 12
 Evidence: agentmint_evidence_20260307.zip
 
 $ bash VERIFY.sh
-Receipts verified: 80/80 · Violations flagged: 12 · All signatures valid
+|Receipts verified: 80/80 · Violations flagged: 12 · All signatures valid
 ```
+
+![ElevenLabs Demo](elevenlabs.gif)
 
 ---
 
