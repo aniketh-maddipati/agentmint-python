@@ -8,7 +8,7 @@ Cryptographic notary for AI agent actions. Tamper-evident, AIUC-1-tagged evidenc
 
 Passive notary — never in the call path. Ed25519 signed. RFC 3161 timestamped. Verifiable with OpenSSL alone. Receipts stay with the customer. AgentMint holds nothing.
 
-**[GitHub](https://github.com/aniketh-maddipati/agentmint-python)** | **[One-Pager](https://agentmint-brief-builder.lovable.app/)**
+**[GitHub](https://github.com/aniketh-maddipati/agentmint-python)** | **[One-Pager](https://aniketh-maddipati.github.io/agentmint-python/)**
 
 ---
 
