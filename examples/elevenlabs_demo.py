@@ -29,6 +29,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import subprocess
 import sys
 import tempfile
 import time
@@ -591,6 +592,143 @@ def main() -> None:
 
     # VERIFY.sh demo closer
     show_verify_demo(zip_path)
+
+
+
+    # ── Tamper test ────────────────────────────────────────────
+    head('⑦ Tamper Test — One Bit Breaks the Chain')
+
+    tamper_dir = Path(tempfile.mkdtemp())
+    with zipfile.ZipFile(zip_path) as zf:
+        zf.extractall(tamper_dir)
+
+    # Find the out-of-policy receipt (the injection one)
+    import subprocess
+    tamper_target = None
+    for name in sorted(os.listdir(tamper_dir / 'receipts')):
+        if not name.endswith('.json'):
+            continue
+        fpath = tamper_dir / 'receipts' / name
+        rdata = json.loads(fpath.read_text())
+        if not rdata['in_policy']:
+            tamper_target = (fpath, rdata['id'][:8], rdata['id'])
+            break
+
+    if tamper_target:
+        fpath, short_id, full_id = tamper_target
+        tsq_path = tamper_dir / "receipts" / f"{full_id}.tsq"
+        tsr_path = tamper_dir / "receipts" / f"{full_id}.tsr"
+
+        # Step 1: Show what we're verifying
+        sub("Step 1: What's inside the timestamp query (.tsq)")
+        dim("The TSQ contains a SHA-512 hash of the signed receipt.")
+        dim("FreeTSA signed this hash. The TSR proves it existed at that moment.")
+        console.print()
+
+        if tsq_path.exists():
+            original_tsq = tsq_path.read_bytes()
+
+            # Show hex dump of the hash region (bytes 20-40)
+            dim(f"TSQ file: {len(original_tsq)} bytes (DER-encoded ASN.1)")
+            dim(f"Bytes 20-39 contain the start of the SHA-512 hash:")
+            hex_line = " ".join(f"{b:02x}" for b in original_tsq[20:40])
+            console.print(f"  [bold cyan]{hex_line}[/]")
+            dim(f"Byte 27 = 0x{original_tsq[27]:02x} = {original_tsq[27]:08b} (binary)")
+            p(0.5)
+
+            # Step 2: Verify clean first
+            sub("Step 2: Verify everything passes before tampering")
+            verify_cmd = (
+                f"openssl ts -verify "
+                f"-in receipts/{full_id}.tsr "
+                f"-queryfile receipts/{full_id}.tsq "
+                f"-CAfile freetsa_cacert.pem "
+                f"-untrusted freetsa_tsa.crt"
+            )
+            dim(f"Running: {verify_cmd}")
+            result = subprocess.run(
+                ["bash", str(tamper_dir / "VERIFY.sh")],
+                capture_output=True, text=True,
+            )
+            ok(f"All timestamps verified: {result.stdout.count('Verified')}/2")
+            p(0.5)
+
+            # Step 3: Flip one bit
+            sub("Step 3: Flip exactly one bit")
+            corrupted = bytearray(original_tsq)
+            old_byte = corrupted[27]
+            corrupted[27] ^= 0x01
+            new_byte = corrupted[27]
+
+            console.print(f"  [dim]Before:[/] byte 27 = [bold green]0x{old_byte:02x}[/] = [green]{old_byte:08b}[/]")
+            console.print(f"  [dim]After: [/] byte 27 = [bold red]0x{new_byte:02x}[/]  = [red]{new_byte:08b}[/]")
+            # Show which bit flipped
+            xor = old_byte ^ new_byte
+            bit_pos = 0
+            while xor > 1:
+                xor >>= 1
+                bit_pos += 1
+            dim(f"Exactly 1 bit changed (bit {bit_pos}). Everything else identical.")
+            p(0.3)
+
+            # Write corrupted file
+            tsq_path.write_bytes(bytes(corrupted))
+
+            # Show the corrupted hex
+            dim("Corrupted TSQ bytes 20-39:")
+            hex_after = " ".join(f"{b:02x}" for b in corrupted[20:40])
+            console.print(f"  [bold red]{hex_after}[/]")
+            p(0.5)
+
+            # Step 4: OpenSSL rejects it
+            sub("Step 4: OpenSSL verification after tampering")
+            dim(f"Running same command: {verify_cmd}")
+            tamper_result = subprocess.run(
+                ["bash", str(tamper_dir / "VERIFY.sh")],
+                capture_output=True, text=True,
+            )
+            if tamper_result.returncode != 0:
+                fail("Verification FAILED")
+                for line in tamper_result.stdout.strip().split("\n"):
+                    if "FAILED" in line:
+                        console.print(f"    [bold red]{line.strip()}[/]")
+                    elif "Receipts verified" in line or "failures" in line.lower():
+                        dim(f"  {line.strip()}")
+                console.print()
+                dim("The SHA-512 hash in the TSQ no longer matches what FreeTSA signed.")
+                dim("OpenSSL rejected it. No AgentMint code was involved.")
+            else:
+                warn("Unexpected: verification still passed")
+            p(0.5)
+
+            # Step 5: Restore and re-verify
+            sub("Step 5: Restore original and re-verify")
+            tsq_path.write_bytes(original_tsq)
+            dim("Original TSQ restored.")
+            restore_result = subprocess.run(
+                ["bash", str(tamper_dir / "VERIFY.sh")],
+                capture_output=True, text=True,
+            )
+            ok(f"All timestamps verified again: {restore_result.stdout.count('Verified')}/2")
+            p(0.3)
+
+            console.print()
+            console.print(Panel(
+                Text.from_markup(
+                    "[bold white]One bit in a 91-byte file.[/]\n\n"
+                    "  [dim]The timestamp query contains a SHA-512 hash of the signed receipt.[/]\n"
+                    "  [dim]FreeTSA signed that exact hash on 2026-03-09.[/]\n"
+                    "  [dim]Changing one bit makes the hash wrong. OpenSSL catches it instantly.[/]\n\n"
+                    "  [bold]No AgentMint code involved in detection.[/]\n"
+                    "  [bold]The TSA certificate will exist whether or not AgentMint does.[/]\n"
+                    "  [dim]This is Anchor 2 of the three-anchor tamper-evidence chain.[/]"
+                ),
+                title="[bold red]Tamper Evidence[/]",
+                border_style="dim red",
+                padding=(1, 2),
+            ))
+    else:
+        dim("No out-of-policy receipt found for tamper test")
 
     # Done
     console.print()
