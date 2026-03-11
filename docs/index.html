@@ -1,155 +1,389 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AgentMint x AIUC-1</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600&display=swap');
-  :root{--bg:#0B1120;--card:#141E30;--border:#1E3A5F;--blue:#3B82F6;--green:#10B981;--red:#EF4444;--text:#94A3B8;--bright:#E2E8F0;--dim:#475569;--mono:'JetBrains Mono',monospace;--sans:'Inter',system-ui,sans-serif;}
-  *{margin:0;padding:0;box-sizing:border-box;}
-  body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;}
-  .page{max-width:620px;margin:0 auto;padding:56px 24px 72px;}
-  h1{font-family:var(--mono);font-size:24px;font-weight:700;color:var(--bright);margin-bottom:6px;}
-  h1 span{color:var(--blue);}
-  .tagline{font-size:15px;color:var(--text);margin-bottom:28px;}
-  .tagline strong{color:var(--bright);}
-  h2{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--blue);letter-spacing:0.1em;text-transform:uppercase;margin:36px 0 10px;}
-  p{margin-bottom:12px;}
-  strong{color:var(--bright);}
-  code{font-family:var(--mono);font-size:12px;background:var(--card);padding:1px 5px;border-radius:3px;border:1px solid var(--border);color:var(--bright);}
-  a{color:var(--blue);text-decoration:none;}
-  a:hover{text-decoration:underline;}
-
-  .r{display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--card);border:1px solid var(--border);border-radius:6px;margin:3px 0;font-family:var(--mono);font-size:12px;}
-  .r .a{flex:1;color:var(--bright);}
-  .t{font-size:10px;font-weight:500;padding:2px 6px;border-radius:3px;flex-shrink:0;}
-  .tg{color:var(--green);background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);}
-  .tr{color:var(--red);background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);}
-
-  .insight{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--blue);border-radius:0 8px 8px 0;padding:16px 20px;margin:16px 0;}
-  .insight p{font-size:14px;color:var(--bright);margin:0;line-height:1.7;}
-
-  .arch{display:flex;flex-direction:column;gap:3px;margin:16px 0;}
-  .arch-row{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:12px 16px;font-size:13px;}
-  .arch-num{font-family:var(--mono);font-size:10px;color:var(--blue);font-weight:600;letter-spacing:0.08em;margin-bottom:2px;}
-  .arch-title{color:var(--bright);font-weight:600;margin-bottom:2px;}
-  .arch-desc{color:var(--text);font-size:12px;line-height:1.6;}
-
-  .cb{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px 18px;font-family:var(--mono);font-size:12px;line-height:1.6;color:var(--dim);margin:16px 0;white-space:pre;overflow-x:auto;}
-
-  .controls{display:grid;grid-template-columns:1fr 1fr;gap:3px;margin:16px 0;}
-  .ctrl{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:12px 14px;}
-  .ctrl-id{font-family:var(--mono);font-size:11px;color:var(--blue);font-weight:600;margin-bottom:2px;}
-  .ctrl-name{font-size:13px;color:var(--bright);font-weight:500;margin-bottom:3px;}
-  .ctrl-how{font-size:11px;color:var(--dim);line-height:1.55;}
-
-  .ask{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:20px 24px;margin:16px 0;}
-  .ask-label{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--green);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;}
-  .ask p{font-size:13px;color:var(--text);margin:0;line-height:1.7;}
-  .ask p strong{color:var(--bright);}
-
-  .foot{margin-top:40px;padding-top:20px;border-top:1px solid var(--border);font-size:12px;color:var(--dim);font-family:var(--mono);text-align:center;}
-  .foot a{color:var(--blue);}
-</style>
+  <meta charset="UTF-8" />
+  <title>AgentMint – AI Agent Identity Gateway</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 0 16px 64px;
+      line-height: 1.6;
+      color: #111827;
+      background: #ffffff;
+    }
+    h1, h2, h3 {
+      color: #111827;
+      margin-top: 24px;
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-size: 1.9rem;
+      margin-bottom: 4px;
+    }
+    h2 {
+      font-size: 1.3rem;
+    }
+    h3 {
+      font-size: 1.05rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #4b5563;
+    }
+    p {
+      margin: 8px 0 12px;
+    }
+    code, pre {
+      font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.9rem;
+    }
+    pre {
+      background: #0b1120;
+      color: #e5e7eb;
+      padding: 12px 14px;
+      border-radius: 6px;
+      overflow-x: auto;
+      margin: 12px 0 16px;
+    }
+    strong {
+      font-weight: 600;
+    }
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      background: #eef2ff;
+      color: #3730a3;
+      margin-right: 6px;
+    }
+    .meta {
+      font-size: 0.9rem;
+      color: #4b5563;
+    }
+    ul {
+      margin: 6px 0 10px 20px;
+      padding: 0;
+    }
+    li {
+      margin-bottom: 4px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1.4fr;
+      gap: 18px;
+      align-items: flex-start;
+    }
+    .badge-row {
+      margin-top: 8px;
+      margin-bottom: 16px;
+    }
+    .badge-row span {
+      display: inline-block;
+      background: #f3f4f6;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 0.8rem;
+      margin-right: 6px;
+      margin-bottom: 4px;
+    }
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      margin-bottom: 16px;
+      font-size: 0.9rem;
+    }
+    .table th,
+    .table td {
+      border: 1px solid #e5e7eb;
+      padding: 6px 8px;
+      vertical-align: top;
+    }
+    .table th {
+      background: #f9fafb;
+      font-weight: 600;
+      text-align: left;
+    }
+    .callout {
+      border-left: 3px solid #2563eb;
+      background: #eff6ff;
+      padding: 8px 10px;
+      font-size: 0.9rem;
+      margin: 12px 0 18px;
+    }
+    a {
+      color: #2563eb;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    hr {
+      border: 0;
+      border-top: 1px solid #e5e7eb;
+      margin: 24px 0;
+    }
+  </style>
 </head>
 <body>
-<div class="page">
 
-<h1>Agent<span>Mint</span></h1>
+  <h1>AgentMint – AI Agent Identity Gateway</h1>
+  <p class="meta">
+    Treat AI agents as first‑class non‑human identities. Enforce least‑privilege. Emit cryptographic evidence for auditors, regulators, and insurers.
+  </p>
 
-<h2>The problem</h2>
-<p>AIUC-1 certification today is a <strong>point-in-time attestation</strong>. Between quarterly tests, enterprises have no independent proof their AI agent calls were within policy. Evidence assembly takes 3–5 weeks and repeats every quarter. When an incident occurs at month two, the forensic trail is unsigned app logs — <strong>controlled by the party under investigation.</strong></p>
-
-<div class="insight">
-  <p>AgentMint makes certification continuously provable. Every agent action generates a tamper-evident, cryptographically signed receipt — accumulating passively in the background until the auditor runs <code>VERIFY.sh</code>.</p>
-</div>
-
-<h2>Architecture — three independent anchors</h2>
-<p>AgentMint never wraps or proxies API calls. It observes responses after they return. No single party — including AgentMint — can tamper with the evidence chain.</p>
-
-<div class="arch">
-  <div class="arch-row">
-    <div class="arch-num">Anchor 01</div>
-    <div class="arch-title">Ed25519 Signature</div>
-    <div class="arch-desc">Private key generated on customer machine. Never transmitted. Any field change breaks the signature. Verifiable with OpenSSL alone — no AgentMint dependency.</div>
+  <div class="badge-row">
+    <span>AI Agent Identity</span>
+    <span>Non‑Human IAM</span>
+    <span>AIUC‑1 / ISO 42001 / EU AI Act</span>
+    <span>Open‑Source SDK</span>
   </div>
-  <div class="arch-row">
-    <div class="arch-num">Anchor 02</div>
-    <div class="arch-title">RFC 3161 Timestamp</div>
-    <div class="arch-desc">SHA-512 hash sent to FreeTSA — independent of both AgentMint and the customer. Backdating is mathematically impossible. Only a hash leaves the environment.</div>
+
+  <h3>The Gap</h3>
+  <p>
+    AI agents are being pushed into production faster than security and compliance can keep up. Most enterprises still rely on shared API keys, over‑privileged access, and unsigned app logs when something goes wrong. There is no clear way to answer:
+  </p>
+  <ul>
+    <li><strong>Which agent acted?</strong></li>
+    <li><strong>Under which policy?</strong></li>
+    <li><strong>Can we prove this to an auditor or insurer without trusting our own logs?</strong></li>
+  </ul>
+
+  <p>
+    At the same time, certifications like <strong>AIUC‑1</strong> and <strong>ISO 42001</strong>, obligations under the <strong>EU AI Act</strong>, and emerging AI insurance products all demand <em>independent, tamper‑evident evidence</em> of how agents behave in production.
+  </p>
+
+  <h3>The Bet</h3>
+  <p>
+    AgentMint started life as an <strong>AIUC‑1 evidence layer</strong>: a cryptographic notary that turns AI agent actions into signed receipts you can hand to auditors. The prototype works in production against ElevenLabs and Claude, and produces receipts that verify cleanly with OpenSSL and a public timestamp authority.
+  </p>
+  <p>
+    Conversations with CISOs, AI governance leads, and security VCs converged on a deeper, more urgent entry point:
+  </p>
+  <div class="callout">
+    <strong>Identity and access are the first problem, and evidence is the exhaust.</strong>
+    Enterprises need to give each agent a first‑class identity, enforce least‑privilege on every action, and only then worry about turning those decisions into audit‑ready evidence.
   </div>
-  <div class="arch-row">
-    <div class="arch-num">Anchor 03</div>
-    <div class="arch-title">Commitment Scheme</div>
-    <div class="arch-desc">Receipts contain hashes of evidence, not evidence itself. No sensitive content leaves the customer environment. If AgentMint disappears, every receipt remains verifiable. The CA certs and public key are in the zip.</div>
+
+  <p>
+    The pivot is to make AgentMint the <strong>agent identity gateway</strong>: where agents get identities, policies are enforced, and cryptographic receipts are generated as a byproduct.
+  </p>
+
+  <hr />
+
+  <h2>What AgentMint Does</h2>
+
+  <div class="grid">
+    <div>
+      <h3>1. Issue Agent Identities</h3>
+      <p>
+        AgentMint creates cryptographic identities for each AI agent or workflow (non‑human identities), tied to owners, purpose, and risk tier. These identities are used to authenticate agents to downstream tools and APIs.
+      </p>
+
+      <h3>2. Enforce Least‑Privilege</h3>
+      <p>
+        Policies define which tools, APIs, data scopes, and environments each agent can touch. The gateway allows or blocks actions based on these policies, and supports checkpoint requirements for sensitive operations.
+      </p>
+    </div>
+    <div>
+      <h3>3. Emit Cryptographic Receipts</h3>
+      <p>
+        Every allowed or denied action generates a tamper‑evident receipt:
+      </p>
+      <ul>
+        <li>Agent identity and policy version</li>
+        <li>Resource / tool, environment, decision (allow / deny)</li>
+        <li>Content and source log hashes (no raw data)</li>
+        <li>Ed25519 signature and RFC 3161 timestamp</li>
+        <li>Explicit mapping to AIUC‑1 / ISO 42001 controls</li>
+      </ul>
+      <p>
+        Receipts are designed to be verifiable with <code>openssl</code> and a public TSA certificate—no AgentMint infrastructure is required for verification.
+      </p>
+    </div>
   </div>
-</div>
 
-<h2>Live evidence — real APIs, no mocks</h2>
-<p>Ran against production ElevenLabs and Claude Sonnet 4.5, timestamped by FreeTSA.org.</p>
+  <h3>4. Package Evidence for Audits and Incidents</h3>
+  <p>
+    Receipts accumulate in an append‑only store and can be exported as “evidence packs” for:
+  </p>
+  <ul>
+    <li>AIUC‑1 re‑certification</li>
+    <li>ISO 42001 and NIST AI RMF assessments</li>
+    <li>EU AI Act documentation requests</li>
+    <li>Insurance underwriting and incident forensics</li>
+  </ul>
 
-<div class="r"><span class="t tg">in policy</span><span class="a">tts:standard</span><span style="color:var(--dim)">ElevenLabs · normal TTS</span></div>
-<div class="r"><span class="t tr">flagged</span><span class="a">voice:clone</span><span style="color:var(--dim)">Clone attempt → 401 + AgentMint</span></div>
-<div class="r"><span class="t tg">in policy</span><span class="a">tts:standard</span><span style="color:var(--dim)">Claude + clean document</span></div>
-<div class="r"><span class="t tr">flagged</span><span class="a">voice:clone</span><span style="color:var(--dim)">Prompt injection caught</span></div>
+  <hr />
 
-<p style="font-size:12px;color:var(--dim);margin-top:6px;">4/4 verified by OpenSSL · 1-bit tamper test → instant failure · receipt 97ea: model refused, AgentMint flagged anyway</p>
+  <h2>Architecture</h2>
 
+  <p>
+    AgentMint is implemented as two cooperating layers in a Python SDK:
+  </p>
 
+  <ul>
+    <li><strong>Gatekeeper (<code>core.py</code>)</strong> – authorization <em>before</em> the action. Issues agent identities, evaluates policies, and decides whether an action should be allowed. Produces structured decision events.</li>
+    <li><strong>Notary (<code>notary.py</code>)</strong> – evidence <em>after</em> the action. Takes decision events and runtime context, then builds, signs, and timestamps receipts.</li>
+  </ul>
 
-<h2>AIUC-1 control mapping</h2>
+  <pre><code>agentmint/
+├── core.py            # Gatekeeper: scoped delegation, checkpoints, replay protection
+├── notary.py          # Notary: passive receipt generation, policy evaluation
+├── anchor.py          # RFC 3161 timestamping (FreeTSA + DigiCert fallback)
+├── commitment.py      # SHA-256 commitment scheme (hash-only receipts)
+├── batch.py           # Batch mode: scenario loading, execution, aggregation
+├── export.py          # Evidence ZIP packaging
+├── keystore.py        # Ed25519 key persistence (generate once, load thereafter)
+├── receipt_store.py   # JSONL append-only receipt persistence
+└── ...</code></pre>
 
-<div class="controls">
-  <div class="ctrl">
-    <div class="ctrl-id">E015</div>
-    <div class="ctrl-name">Log model activity</div>
-    <div class="ctrl-how">Each receipt is the signed log entry. Signature = integrity. Timestamp = when.</div>
-  </div>
-  <div class="ctrl">
-    <div class="ctrl-id">D003</div>
-    <div class="ctrl-name">Restrict unsafe tool calls</div>
-    <div class="ctrl-how">In-policy verdict on every receipt. Clone attempts caught with full evidence chain.</div>
-  </div>
-  <div class="ctrl">
-    <div class="ctrl-id">B001</div>
-    <div class="ctrl-name">Test adversarial robustness</div>
-    <div class="ctrl-how">Receipt 97ea captures full forensic detail on the injection attempt.</div>
-  </div>
-  <div class="ctrl">
-    <div class="ctrl-id">D004</div>
-    <div class="ctrl-name">Third-party testing</div>
-    <div class="ctrl-how">VERIFY.sh runs pure OpenSSL — no AgentMint software required.</div>
-  </div>
-  <div class="ctrl">
-    <div class="ctrl-id">E010</div>
-    <div class="ctrl-name">Acceptable use policy</div>
-    <div class="ctrl-how">voice:clone:* blocks all clone attempts. Double enforcement demonstrated.</div>
-  </div>
-  <div class="ctrl">
-    <div class="ctrl-id">F001 + B006</div>
-    <div class="ctrl-name">Prevent misuse · Limit access</div>
-    <div class="ctrl-how">Injection flagged regardless of model compliance. Declarative policy limits scope.</div>
-  </div>
-</div>
+  <p>
+    The current prototype focuses on the Notary: running alongside real agents, observing responses, applying policy, and generating receipts. The Gatekeeper is being extended into the full identity gateway: issuing identities and enforcing least‑privilege on the front door.
+  </p>
 
-<h2>The ask</h2>
-<p>The technology works. The question is whether <strong>evidence format standardization is a real operational gap</strong> — or whether enterprises are already solving this in ways that aren't visible from outside.</p>
+  <hr />
 
-<div class="ask">
-  <div class="ask-label">Proposed</div>
-  <p>Run AgentMint as a passive sidecar during one real quarterly review cycle. At quarter-end, compare this evidence package against whatever your team currently produces. <strong>Zero availability risk</strong> — never touches existing API integrations. No data leaves except a SHA-512 hash to FreeTSA.</p>
-</div>
+  <h2>Receipts in Practice</h2>
 
-<div class="ask" style="border-left:3px solid var(--blue);border-radius:0 8px 8px 0;margin-top:4px;">
-  <div class="ask-label" style="color:var(--blue)">Context</div>
-  <p>MIT licensed. Lena Smart (AIUC-1 Ambassador) has forwarded this to the AIUC technical team. Your perspective as an AIUC-1 Consortium member is the most relevant input available before deciding whether to build further.</p>
-</div>
+  <p>
+    The existing prototype runs against production ElevenLabs and Claude Sonnet 4.5, timestamped by FreeTSA.org. A sample quarterly run:
+  </p>
 
-<div class="foot">
-  Aniketh Maddipati · <a href="https://linkedin.com/in/anikethmaddipati">linkedin</a> · <a href="https://github.com/aniketh-maddipati/agentmint-python">github</a> · MIT Licensed · March 2026
-</div>
+  <pre><code>$ python -m agentmint.batch scenarios/elevenlabs_quarterly.yaml
 
-</div>
+Loading scenarios... 4 scenarios, 80 executions
+Running against live APIs...
+
+✓ tts:standard     ElevenLabs TTS           [in-policy]    E015,D003,B001
+✗ voice:clone      Clone attempt → 401      [VIOLATION]    E015,D004,E010
+✓ tts:standard     Claude + clean doc       [in-policy]    E015,D003,B001
+✗ tts:standard     Prompt injection caught  [VIOLATION]    E015,D004,B001
+
+Receipts: 80 | In-policy: 68 | Violations: 12
+Evidence: agentmint_evidence_20260307.zip
+
+$ bash VERIFY.sh
+Receipts verified: 80/80 · Violations flagged: 12 · All signatures valid</code></pre>
+
+  <p>
+    Each receipt has three independent anchors:
+  </p>
+  <ul>
+    <li><strong>Ed25519 signature</strong> – any field change breaks the signature.</li>
+    <li><strong>RFC 3161 timestamp</strong> – proves the receipt existed at that time; backdating is impossible.</li>
+    <li><strong>Commitment hashes</strong> – hashes of content and provider logs; no sensitive data leaves the customer environment.</li>
+  </ul>
+
+  <h3>Example Receipt (v0.2)</h3>
+
+  <pre><code>{
+  "receipt_id": "a1f7e3d2-8b4c-4e91-a6f0-3c9d5e2b1a08",
+  "schema_version": "0.2",
+  "action": "tts:standard",
+  "in_policy": true,
+  "violation_type": null,
+  "issued_at": "2026-03-06T04:08:45.221Z",
+  "api_provider": "ElevenLabs",
+  "api_endpoint": "/v1/text-to-speech/{voice_id}",
+  "agent_id": "elevenlabs-demo-agent",
+  "policy_id": "elevenlabs-voice-policy-v2.3",
+  "policy_version": "2.3",
+  "architecture_ref": "arch-doc-2026Q1",
+  "aiuc1_controls": ["E015", "D003", "B001"],
+  "anchored": true,
+  "signature_ed25519": "e4a9b2c1d7f3...",
+  "tsr_token_ref": "receipt_001.tsr",
+  "content_hash": "sha256:7f83b165...",
+  "source_log_hash": "sha256:2c26b46b..."
+}</code></pre>
+
+  <hr />
+
+  <h2>AIUC‑1 / ISO 42001 Control Mapping</h2>
+
+  <p>
+    Each receipt is tagged with the AIUC‑1 controls it evidences. Examples:
+  </p>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Receipt Field</th>
+        <th>Control</th>
+        <th>What It Proves</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>action</code> + <code>in_policy</code></td>
+        <td>E015 Action Logging</td>
+        <td>Every agent action logged with policy outcome.</td>
+      </tr>
+      <tr>
+        <td><code>violation_type</code></td>
+        <td>D004 Tool Call Testing</td>
+        <td>Unauthorized / out‑of‑policy actions detected and recorded.</td>
+      </tr>
+      <tr>
+        <td><code>signature_ed25519</code></td>
+        <td>B001 Adversarial Robustness</td>
+        <td>Evidence is tamper‑evident and independently verifiable.</td>
+      </tr>
+      <tr>
+        <td><code>content_hash</code></td>
+        <td>D003 Restrict Unsafe Tool Calls</td>
+        <td>Commits to tool call content without exposing it.</td>
+      </tr>
+      <tr>
+        <td><code>source_log_hash</code></td>
+        <td>B006 System Security</td>
+        <td>Cross‑reference with provider logs detects manipulation.</td>
+      </tr>
+      <tr>
+        <td><code>tsr_token_ref</code></td>
+        <td>E010 Acceptable Use Policy</td>
+        <td>Independent timestamp proves evidence existed before dispute.</td>
+      </tr>
+      <tr>
+        <td><code>policy_id</code> + <code>policy_version</code></td>
+        <td>E007 Change Management</td>
+        <td>Links each action to the exact policy version in force.</td>
+      </tr>
+      <tr>
+        <td><code>agent_id</code></td>
+        <td>B005/B007 IAM &amp; Access Control</td>
+        <td>Identifies which agent acted, traceable to authorization chain.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr />
+
+  <h2>How to Engage</h2>
+
+  <p>
+    The prototype is open‑source, MIT‑licensed, and already generating real receipts against production APIs. The next step is to harden the identity gateway layer with a small set of design partners:
+  </p>
+
+  <ul>
+    <li>AI‑native SaaS companies shipping agents into enterprise production.</li>
+    <li>Enterprises pursuing AIUC‑1 / ISO 42001 / EU AI Act readiness.</li>
+    <li>Insurers and auditors experimenting with cryptographic evidence formats for AI risk.</li>
+  </ul>
+
+  <p>
+    The ask is simple: run AgentMint alongside one real agent in a non‑critical workflow, and compare the identity + evidence story against whatever you have today when an incident or audit comes around.
+  </p>
+
+  <p>
+    If this is a problem you’re feeling directly, I’d love to talk.
+  </p>
+
 </body>
 </html>
