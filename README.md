@@ -1,25 +1,33 @@
+```markdown
 # AgentMint
 
-**Open-source cryptographic notary for AI agent actions.**
+**Open‑source agent identity gateway and AIUC‑1 evidence engine.**
 
-No standard evidence format exists for AIUC-1 audits. Every certified company builds custom. AgentMint generates it automatically.
+AIUC‑1, IBM’s AI Risk Atlas, and similar frameworks now tell you *which* controls you need for AI agents.[web:979][web:982] AgentMint proves *what your agents actually did* against those controls, with cryptographic receipts you can verify independently.
 
-Cryptographic notary for AI agent actions. Tamper-evident, AIUC-1-tagged evidence receipts — generated passively, verified independently.
+Every agent becomes a first‑class identity with least‑privilege policies, and every action emits a tamper‑evident, AIUC‑1‑tagged receipt — generated passively, verified with OpenSSL alone.[web:979]
 
-Passive notary — never in the call path. Ed25519 signed. RFC 3161 timestamped. Verifiable with OpenSSL alone. Receipts stay with the customer. AgentMint holds nothing.
-
-**[GitHub](https://github.com/aniketh-maddipati/agentmint-python)** | **[One-Pager](https://aniketh-maddipati.github.io/agentmint-python/)**
+**[GitHub](https://github.com/aniketh-maddipati/agentmint-python)** | **[One‑Pager](https://aniketh-maddipati.github.io/agentmint-python/)**  
 
 ---
 
 ## What it does
 
-Agent calls the API normally. After it returns, AgentMint reads the response, evaluates policy, signs a receipt, and timestamps it via an independent authority. ~400ms. Zero changes to the call path.
+AgentMint has two core jobs:
+
+1. **Agent identity & least‑privilege (Gatekeeper).**  
+   - Issue scoped “plans” to agents: which tools/APIs/resources they can touch and under what conditions.  
+   - Enforce checkpoints and replay protection *before* high‑risk actions.
+
+2. **Cryptographic receipts for every action (Notary).**  
+   - After the call returns, AgentMint evaluates policy, signs a receipt, timestamps it with an independent TSA, and tags it with AIUC‑1 controls.[web:979]  
+   - ~400ms overhead, never in the call path, no new availability dependency.
 
 Three anchors per receipt:
-- **Ed25519 signature** — any modification breaks it instantly
-- **RFC 3161 timestamp** — independent authority, backdating impossible
-- **Commitment hashes** — receipts contain hashes, not content. Nothing sensitive leaves
+
+- **Ed25519 signature** – any modification breaks it immediately.  
+- **RFC 3161 timestamp** – independent authority; backdating is impossible.  
+- **Commitment hashes** – receipts contain hashes, not content, so nothing sensitive leaves your environment.
 
 ---
 
@@ -27,10 +35,11 @@ Three anchors per receipt:
 
 AgentMint has two layers that coexist:
 
-**Gatekeeper (`core.py`)** — Authorization *before* the action. Scoped delegation, checkpoints, replay protection. "Should this agent be allowed to do this?"
+**Gatekeeper (`core.py`)** — Authorization *before* the action. Scoped delegation, checkpoints, replay protection. “Should this agent be allowed to do this right now?”
 
-**Notary (`notary.py`)** — Evidence *after* the action. Passive receipt generation, policy evaluation, cryptographic signing, RFC 3161 timestamping. "Prove this agent did this, and prove the receipt hasn't been tampered with."
-```
+**Notary (`notary.py`)** — Evidence *after* the action. Passive receipt generation, policy evaluation, Ed25519 signing, RFC 3161 timestamping, AIUC‑1 control tagging. “Prove this agent did this, under this policy, at this time.”
+
+```text
 agentmint/
 ├── core.py            # Gatekeeper: scoped delegation, checkpoints, replay protection
 ├── notary.py          # Notary: passive receipt generation, policy evaluation
@@ -38,7 +47,7 @@ agentmint/
 ├── commitment.py      # SHA-256 commitment scheme (hash-only receipts)
 ├── batch.py           # Batch mode: scenario loading, execution, aggregation
 ├── export.py          # Evidence ZIP packaging
-├── keystore.py        # Ed25519 key persistence (generate once, load thereafter)
+├── keystore.py        # Ed25519 key persistence
 ├── receipt_store.py   # JSONL append-only receipt persistence
 ├── types.py           # Data types and enums
 ├── errors.py          # Exception hierarchy
@@ -46,10 +55,85 @@ agentmint/
 └── decorator.py       # @require_receipt decorator
 ```
 
+System view:
+
+```text
+Agent → Identity Gateway (Gatekeeper) → Tools / APIs
+                      ↓
+          Cryptographic Notary (Notary)
+                      ↓
+     Receipts → Evidence package → Auditors / GRC / AIUC‑1 / IBM tooling
+```
+
+---
+
+## How AgentMint does agent IAM
+
+AgentMint treats every AI agent as a first‑class **non‑human identity (NHI)** with its own scope, owner, and audit trail, instead of hiding agents behind shared API keys or generic service accounts.[web:996][web:998]
+
+### 1. Issuing agent identities and plans
+
+At the IAM layer, AgentMint issues a **plan** to each agent:
+
+- A unique `agent_id` that represents that specific agent.  
+- A **scope**: which tools/APIs/resources it can touch (e.g. `tts:standard`, `read:public:*`).  
+- A **delegation chain**: who delegated authority to this agent (`user`, service, or higher‑level agent).  
+- **Constraints**: actions that require a checkpoint (human approval, higher‑trust agent) before they’re allowed.
+
+```python
+from agentmint import AgentMint
+
+mint = AgentMint()
+
+plan = mint.issue_plan(
+    action="file-analysis",
+    user="manager@company.com",             # human / principal
+    scope=["read:public:*", "write:summary:*"],
+    delegates_to=["claude-sonnet-4-20250514"],
+    requires_checkpoint=["read:secret:*", "delete:*"],
+)
+```
+
+This is effectively **agent provisioning + least‑privilege policy** in one object.[web:996]
+
+### 2. Enforcing least‑privilege per action
+
+Whenever an agent wants to do something, Gatekeeper is called before the action:
+
+```python
+result = mint.delegate(plan, "claude-sonnet-4-20250514", "read:public:report.txt")
+if result.ok:
+    ...
+```
+
+On each call, Gatekeeper:
+
+- Verifies the agent identity (`agent_id`) against the `delegates_to` list.  
+- Checks the requested operation (`"read:public:report.txt"`) against the **scope**; if it’s out of scope, it is blocked or marked as a violation.  
+- Enforces **checkpoints** for high‑risk actions (e.g. `read:secret:*`), so those cannot execute without additional approval.  
+- Adds **replay protection**, so a captured plan cannot be reused indefinitely.[web:996]
+
+This yields **per‑agent, per‑action authorization**, rather than “this API key can do everything forever.”[web:998]
+
+### 3. Binding IAM decisions to cryptographic receipts
+
+After the action runs, the Notary layer turns the IAM decision into a verifiable receipt:
+
+- Copies the identity context (`agent_id`, `user`, `policy_id`, `policy_version`).  
+- Records whether the action was **in policy** or a **violation**, plus `violation_type`.  
+- Signs the receipt with Ed25519 and anchors it with an RFC 3161 timestamp.  
+- Commits to sensitive content and logs via hashes only.
+
+Your IAM decisions are no longer just runtime checks; they’re **persisted as tamper‑evident evidence** you can show auditors, insurers, or platforms like AIUC‑1 / IBM Risk Atlas.[web:979][web:982]
+
+Short why:  
+> AgentMint gives AI agents real IAM: every agent gets a unique identity, a scoped plan of what it’s allowed to do, and checkpoints for high‑risk actions. Instead of spraying shared API keys across agents, you enforce least‑privilege on every call and then turn each decision into a signed, timestamped receipt. The result is agent IAM that your security team can reason about and your auditors can verify independently.
+
 ---
 
 ## Demo — real APIs, no mocks
-```
+
+```bash
 $ python -m agentmint.batch scenarios/elevenlabs_quarterly.yaml
 
 Loading scenarios... 4 scenarios, 80 executions
@@ -67,11 +151,10 @@ $ bash VERIFY.sh
 |Receipts verified: 80/80 · Violations flagged: 12 · All signatures valid
 ```
 
-![ElevenLabs Demo](elevenlabs.gif)
-
 ---
 
 ## Receipt schema (v0.2)
+
 ```json
 {
   "receipt_id": "a1f7e3d2-8b4c-4e91-a6f0-3c9d5e2b1a08",
@@ -98,57 +181,58 @@ $ bash VERIFY.sh
 
 ---
 
-## AIUC-1 Control Mapping
+## AIUC‑1 control mapping (examples)
 
-| Receipt Field | Control | What It Proves |
-|---|---|---|
-| action + in_policy | E015 Action Logging | Every agent action logged with policy result |
-| violation_type | D004 Tool Call Testing | Unauthorized actions detected and recorded |
-| signature_ed25519 | B001 Adversarial Robustness | Evidence is tamper-evident and independently verifiable |
-| content_hash | D003 Restrict Unsafe Tool Calls | Tool call content committed without exposing it |
-| source_log_hash | B006 System Security | Cross-reference with provider logs detects manipulation |
-| tsr_token_ref | E010 Acceptable Use Policy | Independent timestamp proves evidence existed before dispute |
-| policy_id + version | E007 Change Management | Links each action to the specific policy version |
-| architecture_ref | E005 Cloud vs On-Prem | Links runtime evidence to architecture documentation |
-| agent_id | B005/B007 IAM/Access Control | Which agent acted, traceable to authorization chain |
-| aiuc1_controls | All | Machine-readable mapping enables automated compliance reporting |
+AgentMint doesn’t define controls; it **implements and evidences** them. AIUC‑1 plus IBM’s Risk Atlas / Nexus tell you which controls to apply; AgentMint emits receipts that prove how your agents behaved against those controls in production.[web:979][web:982]
+
+| Receipt Field          | AIUC‑1 Control(s) | What It Proves in Practice |
+|------------------------|-------------------|----------------------------|
+| `action` + `in_policy` | E015              | Every agent action is logged with a clear “in‑policy / violation” outcome. |
+| `violation_type`       | D004              | Unauthorized / unsafe tool calls are detected, classified, and recorded. |
+| `signature_ed25519`    | B001, B006        | Evidence is tamper‑evident and independently verifiable; any change breaks the signature. |
+| `content_hash`         | D003              | Tool/LLM content is committed without exposing it, enabling safe cross‑checking. |
+| `source_log_hash`      | B006              | Ties receipts to provider logs, enabling forensic correlation for incidents. |
+| `tsr_token_ref`        | E010              | Independent timestamp shows evidence existed at the time, not back‑filled later. |
+| `policy_id` + version  | E007              | Every action is tied to the exact policy and version in force when it ran. |
+| `architecture_ref`     | E005              | Links runtime evidence back to documented architecture and data‑flow. |
+| `agent_id`             | B005/B007         | Which agent identity acted, traceable through your IAM / access control chain. |
 
 ---
 
 ## Evidence package
 
-AI agent certifications like AIUC-1 require quarterly re-testing. Every 90 days, someone rebuilds an evidence package from scratch — manually reconstructing what the agent did, which controls fired, which actions were in-policy. It's expensive, slow, and entirely dependent on trusting whoever wrote the report.
+Agent certifications like AIUC‑1 expect continuous, control‑aligned evidence, not one‑off screenshots.[web:979] Today, teams rebuild evidence packages manually every quarter.
 
-There's no continuous, cryptographically verifiable audit trail. Until now.
+AgentMint automates that:
 
-## What agentmint does
-
-AgentMint sits passively alongside existing agent infrastructure. It never wraps API calls, never blocks actions, never creates an availability dependency. It observes what happened and signs evidence after the fact.
-
-```
-Agent calls ElevenLabs API normally
-         ↓
+```text
+Agent calls API normally
+        ↓
 API response returns
-         ↓
-AgentMint reads response → evaluates policy → builds receipt
-         ↓
-Ed25519 signature  +  RFC 3161 timestamp (FreeTSA)  +  SHA-256 commitment hashes
-         ↓
-Anchored receipt written to local evidence package
+        ↓
+AgentMint evaluates policy → builds receipt
+        ↓
+Ed25519 signature + RFC 3161 timestamp + SHA-256 commitments
+        ↓
+Anchored receipts written into a portable evidence package (ZIP)
 ```
 
-Every receipt is independently verifiable with a single OpenSSL command. No AgentMint infrastructure required. Receipts remain valid forever.
+Receipts stay with you; verification uses only OpenSSL and the TSA’s public cert.
 
-## Tamper-evidence: three independent anchors
+---
 
-**Anchor 1 — Ed25519 signature**
-AgentMint signs every receipt at generation with a private key that never leaves the customer machine. Any modification to any field breaks the signature immediately.
+## Tamper‑evidence: three independent anchors
 
-**Anchor 2 — RFC 3161 timestamp**
-The SHA-512 hash of the signed receipt goes to FreeTSA — an independent third party neither AgentMint nor the customer controls. The returned token cryptographically proves that exact receipt existed at that exact moment. Backdating is impossible.
+**1. Ed25519 signature**  
+Every receipt is signed with a private key that never leaves your environment. Any bit flip breaks the signature.
 
-**Anchor 3 — Commitment scheme**
-Receipts contain SHA-256 hashes of evidence components, not raw content. No sensitive data leaves the customer environment. Anyone with the original evidence can verify the receipt is consistent with what happened.
+**2. RFC 3161 timestamp**  
+The hash of the signed receipt is sent to a trusted timestamp authority (FreeTSA + optional DigiCert). The token proves the receipt existed at that time; you can’t backdate incidents.
+
+**3. Commitment scheme**  
+Receipts contain hashes of payloads and logs, not raw content, so you can share receipts with auditors, insurers, or governance platforms without leaking data.[web:982]
+
+---
 
 ## Verify receipts
 
@@ -156,13 +240,17 @@ Receipts contain SHA-256 hashes of evidence components, not raw content. No sens
 ./VERIFY.sh
 ```
 
-One command. Pure OpenSSL against FreeTSA's public CA cert. No Python. No trust in AgentMint.
+Under the hood: pure OpenSSL against the included public key and TSA CA cert.
 
-```
-Receipts verified: 4
-Out-of-policy actions flagged: 2
+```text
+Receipts verified: 80/80
+Out-of-policy actions flagged: 12
 Verification timestamp: 2026-03-05T14:32:01Z
 ```
+
+Evidence bundle layout:
+
+```text
 agentmint_evidence_20260307/
 ├── receipt_index.json       # Aggregate summary — auditor reads first
 ├── receipts/
@@ -172,43 +260,13 @@ agentmint_evidence_20260307/
 ├── keys/
 │   └── public_key.pem       # Ed25519 public key
 ├── certs/
-│   └── freetsa_cacert.pem   # TSA CA certificate (bundled)
+│   └── freetsa_cacert.pem   # TSA CA certificate
 ├── VERIFY.sh                # One-command verification — pure OpenSSL
 ├── TAMPER_TEST.sh           # Automated tamper demonstration
-└── control_mapping.pdf      # AIUC-1 control mapping
+└── control_mapping.pdf      # AIUC‑1 / framework crosswalk
 ```
 
 ---
-
-## Verify it yourself
-```bash
-unzip agentmint_evidence_20260307.zip
-bash VERIFY.sh
-# Receipts verified: 80/80 · Flagged: 12 · No AgentMint code needed
-```
-
-Pure OpenSSL. No Python. No trust in the founder.
-
----
-
-## Demo scenarios
-
-| Scenario | What happens | Receipt outcome |
-|---|---|---|
-| Normal TTS call | Real ElevenLabs TTS call | `in_policy: true` |
-| Voice clone attempt | ElevenLabs returns 403 | `in_policy: false` — violation recorded |
-| Claude reads clean doc | Normal TTS tool call | `in_policy: true` |
-| Claude reads injected doc | Prompt injection → clone attempt | `in_policy: false, violation_type: prompt_injection` |
-
-## AIUC-1 control mapping
-
-Every receipt tags three controls automatically from publicly available API output:
-
-| Receipt field | AIUC-1 control | How it evidences the control |
-|---|---|---|
-| `action_type` | E015 | Records the category of agent action taken |
-| `in_policy` | B001 | Boolean outcome of policy evaluation at action time |
-| `source_log_hash` | D003 | Commits to ElevenLabs server-side log at notarisation moment |
 
 ## Install
 
@@ -226,7 +284,8 @@ pip install -e .
 
 ---
 
-## Quick start — Gatekeeper
+## Quick start — Gatekeeper (identity & least‑privilege)
+
 ```python
 from agentmint import AgentMint
 
@@ -242,12 +301,13 @@ plan = mint.issue_plan(
 
 result = mint.delegate(plan, "claude-sonnet-4-20250514", "read:public:report.txt")
 if result.ok:
-    pass  # proceed — result.receipt contains Ed25519 signed proof
+    pass  # proceed — result.receipt contains Ed25519-signed proof
 ```
 
 ---
 
-## Quick start — Notary
+## Quick start — Notary (receipts only)
+
 ```python
 from agentmint.notary import Notary
 
@@ -257,7 +317,6 @@ notary = Notary(
     architecture_ref="arch-doc-2026Q1",
 )
 
-# After your agent calls an API, notarize the action
 receipt = notary.notarize(
     action="tts:standard",
     api_provider="ElevenLabs",
@@ -280,49 +339,35 @@ export ELEVENLABS_API_KEY=your-key
 python examples/elevenlabs_demo.py
 ```
 
-## Architecture
-
-AgentMint is a notary, not a gatekeeper.
-
-| Model | How it works | Why it matters |
-|---|---|---|
-| Gatekeeper (rejected) | Sits between agent and API. Every call requires authorization. | AgentMint going down takes your product down. Unacceptable. |
-| Notary (correct) | Reads the response after the fact. Issues signed receipt. Never in the call path. | No availability dependency. Receipts stay with you. No data leaves your environment. |
-
-## Key design decisions
-
-**Receipts stay with the customer.** AgentMint holds nothing. The only outbound call is a SHA-512 hash to FreeTSA.
-
-**No sensitive content in receipts.** Commitment hashes only. Receipts can be shared freely with auditors and insurers without exposing implementation details.
-
-**Verification requires no AgentMint infrastructure.** The Ed25519 public key is 32 bytes. The FreeTSA CA cert is public. If AgentMint ceases to exist tomorrow, every receipt ever generated remains independently verifiable forever.
-
-**Platform agnostic.** The receipt schema has no ElevenLabs-specific fields. Adding a new platform is a new ingestion adapter — days, not months.
-
 ---
 
 ## Who this is for
 
-**Agent startups shipping to enterprises** — Drop in a sidecar. Hand the auditor a zip.
+- **Agent startups selling into enterprises.**  
+  Plug AgentMint in as a sidecar; ship AIUC‑1‑aligned receipts and a one‑command verifier with every proof‑of‑concept.
 
-**Insurers underwriting AI risk** — Tamper-evident receipts. The forensic trail exists before the incident.
+- **Enterprises deploying internal agents.**  
+  Use AIUC‑1 + IBM Risk Atlas to choose controls; use AgentMint to prove how your agents behaved between reviews.[web:979][web:982]
 
-**AIUC-1 ecosystem** — One evidence format. One verification command. Auditors know what to expect.
+- **Insurers and assessors.**  
+  Get tamper‑evident, replayable evidence instead of screenshots and spreadsheets.
 
 ---
 
 ## Status
 
-MVP. Four demo scenarios working end to end against ElevenLabs' public API.
+MVP with end‑to‑end demos against ElevenLabs and Claude.  
+Actively evolving the receipt schema and control mapping with AIUC‑1 / ISO 42001 / EU AI Act in mind.[web:979][web:988]
 
-Built for AIUC-1 certification evidence. If you're deploying agents in regulated industries and quarterly re-testing is painful, [open an issue](https://github.com/aniketh-maddipati/agentmint-python/issues) or reach out.
+If you’re deploying agents in regulated or high‑risk environments and quarterly evidence scrambles hurt, [open an issue](https://github.com/aniketh-maddipati/agentmint-python/issues) or reach out.
 
 ---
 
 ## License
 
-MIT
+MIT  
 
 ## Author
 
 [Aniketh Maddipati](https://linkedin.com/in/anikethmaddipati)
+```
