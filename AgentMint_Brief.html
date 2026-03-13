@@ -3,152 +3,626 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AgentMint x AIUC-1</title>
+<title>AgentMint — AI Agent Identity Gateway</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600&display=swap');
-  :root{--bg:#0B1120;--card:#141E30;--border:#1E3A5F;--blue:#3B82F6;--green:#10B981;--red:#EF4444;--text:#94A3B8;--bright:#E2E8F0;--dim:#475569;--mono:'JetBrains Mono',monospace;--sans:'Inter',system-ui,sans-serif;}
-  *{margin:0;padding:0;box-sizing:border-box;}
-  body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;}
-  .page{max-width:620px;margin:0 auto;padding:56px 24px 72px;}
-  h1{font-family:var(--mono);font-size:24px;font-weight:700;color:var(--bright);margin-bottom:6px;}
-  h1 span{color:var(--blue);}
-  .tagline{font-size:15px;color:var(--text);margin-bottom:28px;}
-  .tagline strong{color:var(--bright);}
-  h2{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--blue);letter-spacing:0.1em;text-transform:uppercase;margin:36px 0 10px;}
-  p{margin-bottom:12px;}
-  strong{color:var(--bright);}
-  code{font-family:var(--mono);font-size:12px;background:var(--card);padding:1px 5px;border-radius:3px;border:1px solid var(--border);color:var(--bright);}
-  a{color:var(--blue);text-decoration:none;}
-  a:hover{text-decoration:underline;}
 
-  .r{display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--card);border:1px solid var(--border);border-radius:6px;margin:3px 0;font-family:var(--mono);font-size:12px;}
-  .r .a{flex:1;color:var(--bright);}
-  .t{font-size:10px;font-weight:500;padding:2px 6px;border-radius:3px;flex-shrink:0;}
-  .tg{color:var(--green);background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);}
-  .tr{color:var(--red);background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);}
+  :root {
+    --bg: #0B1120;
+    --card: #141E30;
+    --border: #1E3A5F;
+    --blue: #3B82F6;
+    --green: #10B981;
+    --red: #EF4444;
+    --text: #94A3B8;
+    --bright: #E2E8F0;
+    --dim: #475569;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Inter', system-ui, sans-serif;
+  }
 
-  .insight{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--blue);border-radius:0 8px 8px 0;padding:16px 20px;margin:16px 0;}
-  .insight p{font-size:14px;color:var(--bright);margin:0;line-height:1.7;}
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
-  .arch{display:flex;flex-direction:column;gap:3px;margin:16px 0;}
-  .arch-row{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:12px 16px;font-size:13px;}
-  .arch-num{font-family:var(--mono);font-size:10px;color:var(--blue);font-weight:600;letter-spacing:0.08em;margin-bottom:2px;}
-  .arch-title{color:var(--bright);font-weight:600;margin-bottom:2px;}
-  .arch-desc{color:var(--text);font-size:12px;line-height:1.6;}
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
 
-  .cb{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px 18px;font-family:var(--mono);font-size:12px;line-height:1.6;color:var(--dim);margin:16px 0;white-space:pre;overflow-x:auto;}
+  .page {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 64px 32px 80px;
+  }
 
-  .controls{display:grid;grid-template-columns:1fr 1fr;gap:3px;margin:16px 0;}
-  .ctrl{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:12px 14px;}
-  .ctrl-id{font-family:var(--mono);font-size:11px;color:var(--blue);font-weight:600;margin-bottom:2px;}
-  .ctrl-name{font-size:13px;color:var(--bright);font-weight:500;margin-bottom:3px;}
-  .ctrl-how{font-size:11px;color:var(--dim);line-height:1.55;}
+  /* Header */
+  h1 {
+    font-family: var(--mono);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--bright);
+    margin-bottom: 6px;
+    letter-spacing: -0.5px;
+  }
 
-  .ask{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:20px 24px;margin:16px 0;}
-  .ask-label{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--green);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;}
-  .ask p{font-size:13px;color:var(--text);margin:0;line-height:1.7;}
-  .ask p strong{color:var(--bright);}
+  h1 span { color: var(--blue); }
 
-  .foot{margin-top:40px;padding-top:20px;border-top:1px solid var(--border);font-size:12px;color:var(--dim);font-family:var(--mono);text-align:center;}
-  .foot a{color:var(--blue);}
+  .tagline {
+    font-size: 16px;
+    color: var(--text);
+    margin-bottom: 10px;
+    line-height: 1.5;
+  }
+
+  .tagline strong { color: var(--bright); }
+
+  .meta {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--dim);
+    margin-bottom: 32px;
+  }
+
+  .meta a { color: var(--blue); text-decoration: none; }
+
+  .badge-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 40px;
+  }
+
+  .badge-row span {
+    font-family: var(--mono);
+    font-size: 11px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 4px 12px;
+    color: var(--text);
+  }
+
+  /* Section labels */
+  h2 {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--blue);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin: 40px 0 12px;
+  }
+
+  p {
+    font-size: 15px;
+    color: var(--text);
+    margin-bottom: 14px;
+    line-height: 1.75;
+  }
+
+  strong { color: var(--bright); }
+
+  ul {
+    margin: 6px 0 14px 20px;
+    padding: 0;
+  }
+
+  li {
+    font-size: 15px;
+    color: var(--text);
+    margin-bottom: 6px;
+    line-height: 1.65;
+  }
+
+  code {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    background: var(--card);
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    color: var(--bright);
+  }
+
+  pre {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 18px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.65;
+    color: var(--dim);
+    margin: 14px 0 18px;
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 40px 0;
+  }
+
+  /* Insight callout */
+  .insight {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--blue);
+    border-radius: 0 8px 8px 0;
+    padding: 18px 22px;
+    margin: 18px 0;
+  }
+
+  .insight p {
+    font-size: 15px;
+    color: var(--bright);
+    margin: 0;
+    line-height: 1.75;
+  }
+
+  /* Gap grid */
+  .gap-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin: 16px 0 20px;
+  }
+
+  .gap-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+
+  .gap-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--red);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+
+  .gap-body {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  /* Architecture rows */
+  .arch {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 16px 0;
+  }
+
+  .arch-row {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 18px;
+  }
+
+  .arch-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--blue);
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    margin-bottom: 3px;
+  }
+
+  .arch-title {
+    font-size: 14px;
+    color: var(--bright);
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .arch-desc {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.65;
+  }
+
+  /* Two-column what it does */
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 16px 0;
+  }
+
+  .grid-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 18px;
+  }
+
+  .grid-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--blue);
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+  }
+
+  .grid-title {
+    font-size: 14px;
+    color: var(--bright);
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .grid-body {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.65;
+  }
+
+  .grid-body ul {
+    margin: 6px 0 0 16px;
+  }
+
+  .grid-body li {
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+
+  /* Evidence rows */
+  .evidence-table {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 14px 0;
+  }
+
+  .r {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+  }
+
+  .r .action { flex: 1; color: var(--bright); }
+  .r .desc { font-size: 12px; color: var(--dim); }
+
+  .t {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    width: 72px;
+    text-align: center;
+  }
+
+  .tg {
+    color: var(--green);
+    background: rgba(16,185,129,0.1);
+    border: 1px solid rgba(16,185,129,0.25);
+  }
+
+  .tr {
+    color: var(--red);
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.25);
+  }
+
+  .evidence-footer {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--dim);
+    margin-top: 8px;
+    line-height: 1.6;
+  }
+
+  /* Controls grid */
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin: 16px 0;
+  }
+
+  .ctrl {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+
+  .ctrl-id {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--blue);
+    font-weight: 600;
+    margin-bottom: 3px;
+  }
+
+  .ctrl-name {
+    font-size: 13.5px;
+    color: var(--bright);
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+
+  .ctrl-how {
+    font-size: 12px;
+    color: var(--dim);
+    line-height: 1.6;
+  }
+
+  /* Table */
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0 18px;
+    font-size: 13.5px;
+  }
+
+  .table th, .table td {
+    border: 1px solid var(--border);
+    padding: 9px 12px;
+    vertical-align: top;
+    text-align: left;
+  }
+
+  .table th {
+    background: var(--card);
+    color: var(--bright);
+    font-size: 12px;
+    font-family: var(--mono);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .table td { color: var(--text); }
+  .table td code { font-size: 12px; }
+
+  /* Ask box */
+  .ask {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin: 14px 0;
+  }
+
+  .ask-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--green);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .ask p {
+    font-size: 14px;
+    color: var(--text);
+    margin: 0;
+    line-height: 1.75;
+  }
+
+  /* Footer */
+  .foot {
+    margin-top: 48px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--dim);
+    text-align: center;
+    line-height: 1.8;
+  }
+
+  .foot a { color: var(--blue); }
 </style>
 </head>
 <body>
 <div class="page">
 
-<h1>Agent<span>Mint</span></h1>
-
-<h2>The problem</h2>
-<p>AIUC-1 certification today is a <strong>point-in-time attestation</strong>. Between quarterly tests, enterprises have no independent proof their AI agent calls were within policy. Evidence assembly takes 3–5 weeks and repeats every quarter. When an incident occurs at month two, the forensic trail is unsigned app logs — <strong>controlled by the party under investigation.</strong></p>
-
-<div class="insight">
-  <p>AgentMint makes certification continuously provable. Every agent action generates a tamper-evident, cryptographically signed receipt — accumulating passively in the background until the auditor runs <code>VERIFY.sh</code>.</p>
-</div>
-
-<h2>Architecture — three independent anchors</h2>
-<p>AgentMint never wraps or proxies API calls. It observes responses after they return. No single party — including AgentMint — can tamper with the evidence chain.</p>
-
-<div class="arch">
-  <div class="arch-row">
-    <div class="arch-num">Anchor 01</div>
-    <div class="arch-title">Ed25519 Signature</div>
-    <div class="arch-desc">Private key generated on customer machine. Never transmitted. Any field change breaks the signature. Verifiable with OpenSSL alone — no AgentMint dependency.</div>
+  <!-- Header -->
+  <h1>Agent<span>Mint</span></h1>
+  <div class="tagline"><strong>The only agent gateway your enterprise customers can audit without asking you.</strong></div>
+  <div class="meta">
+    <a href="https://github.com/aniketh-maddipati/agentmint-python">github.com/aniketh-maddipati/agentmint-python</a>
+    &nbsp;·&nbsp; MIT Licensed &nbsp;·&nbsp; March 2026
   </div>
-  <div class="arch-row">
-    <div class="arch-num">Anchor 02</div>
-    <div class="arch-title">RFC 3161 Timestamp</div>
-    <div class="arch-desc">SHA-512 hash sent to FreeTSA — independent of both AgentMint and the customer. Backdating is mathematically impossible. Only a hash leaves the environment.</div>
+
+  <div class="badge-row">
+    <span>AI Agent Identity</span>
+    <span>Non-Human IAM</span>
+    <span>AIUC-1 / ISO 42001 / EU AI Act</span>
+    <span>Open-Source SDK</span>
   </div>
-  <div class="arch-row">
-    <div class="arch-num">Anchor 03</div>
-    <div class="arch-title">Commitment Scheme</div>
-    <div class="arch-desc">Receipts contain hashes of evidence, not evidence itself. No sensitive content leaves the customer environment. If AgentMint disappears, every receipt remains verifiable. The CA certs and public key are in the zip.</div>
+
+  <!-- The Gap -->
+  <h2>The Gap</h2>
+
+  <p>AI agents are running in production with shared API keys, static credentials, and no per-action enforcement. When something goes wrong, three questions go unanswered:</p>
+
+  <div class="gap-grid">
+    <div class="gap-item">
+      <div class="gap-title">Identity</div>
+      <div class="gap-body">Which agent acted — on whose behalf, under what authorization?</div>
+    </div>
+    <div class="gap-item">
+      <div class="gap-title">Authorization</div>
+      <div class="gap-body">Was this specific action in policy at the moment it ran?</div>
+    </div>
+    <div class="gap-item">
+      <div class="gap-title">Proof</div>
+      <div class="gap-body">Can you prove it without trusting the party under investigation?</div>
+    </div>
   </div>
-</div>
 
-<h2>Live evidence — real APIs, no mocks</h2>
-<p>Ran against production ElevenLabs and Claude Sonnet 4.5, timestamped by FreeTSA.org.</p>
+  <p>Existing NHI platforms scope credentials at provisioning time. <strong>Nobody enforces policy at execution time, per action.</strong> When an incident occurs, the forensic trail is unsigned app logs — controlled by the party under investigation.</p>
 
-<div class="r"><span class="t tg">in policy</span><span class="a">tts:standard</span><span style="color:var(--dim)">ElevenLabs · normal TTS</span></div>
-<div class="r"><span class="t tr">flagged</span><span class="a">voice:clone</span><span style="color:var(--dim)">Clone attempt → 401 + AgentMint</span></div>
-<div class="r"><span class="t tg">in policy</span><span class="a">tts:standard</span><span style="color:var(--dim)">Claude + clean document</span></div>
-<div class="r"><span class="t tr">flagged</span><span class="a">voice:clone</span><span style="color:var(--dim)">Prompt injection caught</span></div>
-
-<p style="font-size:12px;color:var(--dim);margin-top:6px;">4/4 verified by OpenSSL · 1-bit tamper test → instant failure · receipt 97ea: model refused, AgentMint flagged anyway</p>
-
-
-
-<h2>AIUC-1 control mapping</h2>
-
-<div class="controls">
-  <div class="ctrl">
-    <div class="ctrl-id">E015</div>
-    <div class="ctrl-name">Log model activity</div>
-    <div class="ctrl-how">Each receipt is the signed log entry. Signature = integrity. Timestamp = when.</div>
+  <div class="insight">
+    <p><strong>Identity and access are the first problem. Evidence is the exhaust.</strong> AgentMint is the gateway where agents get identities, policies are enforced per action, and cryptographic receipts are generated as a byproduct of that decision — not a separate logging step.</p>
   </div>
-  <div class="ctrl">
-    <div class="ctrl-id">D003</div>
-    <div class="ctrl-name">Restrict unsafe tool calls</div>
-    <div class="ctrl-how">In-policy verdict on every receipt. Clone attempts caught with full evidence chain.</div>
-  </div>
-  <div class="ctrl">
-    <div class="ctrl-id">B001</div>
-    <div class="ctrl-name">Test adversarial robustness</div>
-    <div class="ctrl-how">Receipt 97ea captures full forensic detail on the injection attempt.</div>
-  </div>
-  <div class="ctrl">
-    <div class="ctrl-id">D004</div>
-    <div class="ctrl-name">Third-party testing</div>
-    <div class="ctrl-how">VERIFY.sh runs pure OpenSSL — no AgentMint software required.</div>
-  </div>
-  <div class="ctrl">
-    <div class="ctrl-id">E010</div>
-    <div class="ctrl-name">Acceptable use policy</div>
-    <div class="ctrl-how">voice:clone:* blocks all clone attempts. Double enforcement demonstrated.</div>
-  </div>
-  <div class="ctrl">
-    <div class="ctrl-id">F001 + B006</div>
-    <div class="ctrl-name">Prevent misuse · Limit access</div>
-    <div class="ctrl-how">Injection flagged regardless of model compliance. Declarative policy limits scope.</div>
-  </div>
-</div>
 
-<h2>The ask</h2>
-<p>The technology works. The question is whether <strong>evidence format standardization is a real operational gap</strong> — or whether enterprises are already solving this in ways that aren't visible from outside.</p>
+  <hr>
 
-<div class="ask">
-  <div class="ask-label">Proposed</div>
-  <p>Run AgentMint as a passive sidecar during one real quarterly review cycle. At quarter-end, compare this evidence package against whatever your team currently produces. <strong>Zero availability risk</strong> — never touches existing API integrations. No data leaves except a SHA-512 hash to FreeTSA.</p>
-</div>
+  <!-- What AgentMint Does -->
+  <h2>What AgentMint Does</h2>
 
-<div class="ask" style="border-left:3px solid var(--blue);border-radius:0 8px 8px 0;margin-top:4px;">
-  <div class="ask-label" style="color:var(--blue)">Context</div>
-  <p>MIT licensed. Lena Smart (AIUC-1 Ambassador) has forwarded this to the AIUC technical team. Your perspective as an AIUC-1 Consortium member is the most relevant input available before deciding whether to build further.</p>
-</div>
+  <div class="grid">
+    <div class="grid-item">
+      <div class="grid-num">01</div>
+      <div class="grid-title">Issue Agent Identities</div>
+      <div class="grid-body">Each agent gets a cryptographic identity scoped to the task — tied to owner, purpose, and risk tier. Not a shared API key. Not a static credential.</div>
+    </div>
+    <div class="grid-item">
+      <div class="grid-num">02</div>
+      <div class="grid-title">Enforce Least-Privilege</div>
+      <div class="grid-body">Every action evaluated against policy at execution time — not provisioning time. Blocked actions never reach the tool. Supports checkpoints for sensitive operations.</div>
+    </div>
+    <div class="grid-item">
+      <div class="grid-num">03</div>
+      <div class="grid-title">Emit Cryptographic Receipts</div>
+      <div class="grid-body">Every allowed or denied action generates a tamper-evident receipt:
+        <ul>
+          <li>Agent identity + policy version</li>
+          <li>Decision (allow / deny) + content hashes</li>
+          <li>Ed25519 signature + RFC 3161 timestamp</li>
+          <li>AIUC-1 / ISO 42001 control mapping</li>
+        </ul>
+      </div>
+    </div>
+    <div class="grid-item">
+      <div class="grid-num">04</div>
+      <div class="grid-title">Package Evidence</div>
+      <div class="grid-body">Receipts accumulate in an append-only store, exportable as evidence packs for AIUC-1 recertification, ISO 42001, EU AI Act, and insurance underwriting.</div>
+    </div>
+  </div>
 
-<div class="foot">
-  Aniketh Maddipati · <a href="https://linkedin.com/in/anikethmaddipati">linkedin</a> · <a href="https://github.com/aniketh-maddipati/agentmint-python">github</a> · MIT Licensed · March 2026
-</div>
+  <hr>
+
+  <!-- Architecture -->
+  <h2>Architecture — Three Independent Anchors</h2>
+
+  <p>No single party — including AgentMint — can tamper with the evidence chain. Private key never leaves the customer environment. If AgentMint disappears, every receipt remains verifiable with OpenSSL alone.</p>
+
+  <div class="arch">
+    <div class="arch-row">
+      <div class="arch-num">Anchor 01</div>
+      <div class="arch-title">Ed25519 Signature</div>
+      <div class="arch-desc">Private key generated on customer machine. Never transmitted. Any field change breaks the signature. Verifiable with OpenSSL alone — no AgentMint dependency.</div>
+    </div>
+    <div class="arch-row">
+      <div class="arch-num">Anchor 02</div>
+      <div class="arch-title">RFC 3161 Timestamp</div>
+      <div class="arch-desc">SHA-512 hash sent to FreeTSA — independent of both AgentMint and the customer. Backdating is mathematically impossible. Only a hash leaves the environment.</div>
+    </div>
+    <div class="arch-row">
+      <div class="arch-num">Anchor 03</div>
+      <div class="arch-title">Commitment Scheme</div>
+      <div class="arch-desc">Receipts contain hashes of evidence, not evidence itself. No sensitive content leaves the customer environment. CA certs and public key included in the zip.</div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- Live Evidence -->
+  <h2>Live Evidence — Real APIs, No Mocks</h2>
+
+  <p>Ran against production ElevenLabs and Claude Sonnet 4.5, timestamped by FreeTSA.org.</p>
+
+  <div class="evidence-table">
+    <div class="r"><span class="t tg">in policy</span><span class="action">tts:standard</span><span class="desc">ElevenLabs · normal TTS</span></div>
+    <div class="r"><span class="t tr">flagged</span><span class="action">voice:clone</span><span class="desc">Clone attempt → 401 + AgentMint</span></div>
+    <div class="r"><span class="t tg">in policy</span><span class="action">tts:standard</span><span class="desc">Claude + clean document</span></div>
+    <div class="r"><span class="t tr">flagged</span><span class="action">voice:clone</span><span class="desc">Prompt injection · model refused · AgentMint flagged independently</span></div>
+  </div>
+
+  <div class="evidence-footer">
+    4/4 verified by OpenSSL &nbsp;·&nbsp; 1-bit tamper test → instant failure &nbsp;·&nbsp; AIUC-1: E015, D003, B001, D004, E010, B006
+  </div>
+
+  <hr>
+
+  <!-- AIUC-1 Mapping -->
+  <h2>AIUC-1 / ISO 42001 Control Mapping</h2>
+
+  <div class="controls">
+    <div class="ctrl">
+      <div class="ctrl-id">E015</div>
+      <div class="ctrl-name">Log model activity</div>
+      <div class="ctrl-how">Each receipt is the signed log entry. Signature = integrity. Timestamp = when.</div>
+    </div>
+    <div class="ctrl">
+      <div class="ctrl-id">D003</div>
+      <div class="ctrl-name">Restrict unsafe tool calls</div>
+      <div class="ctrl-how">In-policy verdict on every receipt. Clone attempts caught with full evidence chain.</div>
+    </div>
+    <div class="ctrl">
+      <div class="ctrl-id">B001</div>
+      <div class="ctrl-name">Test adversarial robustness</div>
+      <div class="ctrl-how">Receipt 97ea captures full forensic detail on the injection attempt.</div>
+    </div>
+    <div class="ctrl">
+      <div class="ctrl-id">D004</div>
+      <div class="ctrl-name">Third-party testing</div>
+      <div class="ctrl-how">VERIFY.sh runs pure OpenSSL — no AgentMint software required.</div>
+    </div>
+    <div class="ctrl">
+      <div class="ctrl-id">E010</div>
+      <div class="ctrl-name">Acceptable use policy</div>
+      <div class="ctrl-how">voice:clone:* blocks all clone attempts. Double enforcement demonstrated.</div>
+    </div>
+    <div class="ctrl">
+      <div class="ctrl-id">F001 + B006</div>
+      <div class="ctrl-name">Prevent misuse · Limit access</div>
+      <div class="ctrl-how">Injection flagged regardless of model compliance. Declarative policy limits scope.</div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- How to Engage -->
+  <h2>How to Engage</h2>
+
+  <p>The prototype is open-source, MIT-licensed, and generating real receipts against production APIs. Looking for a small set of design partners:</p>
+
+  <ul>
+    <li><strong>AI-native SaaS companies</strong> shipping agents into enterprise production.</li>
+    <li><strong>Enterprises</strong> pursuing AIUC-1 / ISO 42001 / EU AI Act readiness.</li>
+    <li><strong>Insurers and auditors</strong> experimenting with cryptographic evidence formats for AI risk.</li>
+  </ul>
+
+  <div class="ask">
+    <div class="ask-label">Proposed</div>
+    <p>Run AgentMint alongside one real agent in a non-critical workflow. Compare the identity and evidence story against whatever you have today when an incident or audit comes around. <strong>Zero availability risk</strong> — never touches existing integrations. No data leaves except a SHA-512 hash to FreeTSA.</p>
+  </div>
+
+  <div class="foot">
+    Aniketh Maddipati &nbsp;·&nbsp;
+    <a href="https://linkedin.com/in/aniketh-maddipati">linkedin</a> &nbsp;·&nbsp;
+    <a href="https://github.com/aniketh-maddipati/agentmint-python">github</a> &nbsp;·&nbsp;
+    anikethcov@gmail.com &nbsp;·&nbsp; MIT Licensed &nbsp;·&nbsp; March 2026
+  </div>
 
 </div>
 </body>
