@@ -6,7 +6,7 @@ AIUC‑1, IBM’s AI Risk Atlas, and similar frameworks now tell you *which* con
 
 Every agent becomes a first‑class identity with least‑privilege policies, and every action emits a tamper‑evident, AIUC‑1‑tagged receipt — generated passively, verified with OpenSSL alone.
 
-**[GitHub](https://github.com/aniketh-maddipati/agentmint-python)** | **[One‑Pager](https://aniketh-maddipati.github.io/agentmint-python/)**  
+**[One‑Pager](https://aniketh-maddipati.github.io/agentmint-python/)**  
 
 ---
 
