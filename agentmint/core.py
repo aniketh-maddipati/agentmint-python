@@ -59,7 +59,7 @@ def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-@dataclass(slots=True)
+@dataclass()
 class Receipt:
     """A signed authorization receipt."""
     id: str

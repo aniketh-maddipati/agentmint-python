@@ -22,7 +22,7 @@ class DelegationStatus(Enum):
         return self.value.startswith("denied:")
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class DelegationResult:
     """Result of a delegation request."""
     status: DelegationStatus

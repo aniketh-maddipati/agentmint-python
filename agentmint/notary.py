@@ -126,7 +126,7 @@ def _clamp_ttl(ttl: int) -> int:
 
 # ── Policy evaluation ─────────────────────────────────────
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class PolicyEvaluation:
     """Result of evaluating an action against a plan's policy rules.
 
@@ -174,15 +174,19 @@ def _matches_pattern(action: str, pattern: str) -> bool:
     """Match an action string against a scope/checkpoint pattern.
 
     Patterns:
-        "*"            matches everything
-        "tts:*"        matches "tts" and "tts:anything:nested"
-        "tts:standard" matches only "tts:standard" exactly
+        "*"                        matches everything
+        "tts:*"                    matches "tts" and "tts:anything:nested"
+        "sre:rollback:attacker*"   matches any action starting with that prefix
+        "tts:standard"             matches only "tts:standard" exactly
     """
     if pattern == "*":
         return True
     if pattern.endswith(":*"):
         prefix = pattern[:-2]
         return action == prefix or action.startswith(prefix + ":")
+    if pattern.endswith("*"):
+        prefix = pattern[:-1]
+        return action == prefix or action.startswith(prefix)
     return action == pattern
 
 
@@ -213,7 +217,7 @@ def _verify_signature(verify_key: VerifyKey, data: dict[str, Any], signature_hex
 
 # ── Data classes ───────────────────────────────────────────
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class PlanReceipt:
     """Signed plan defining what actions are allowed.
 
@@ -258,7 +262,7 @@ class PlanReceipt:
         return d
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class NotarisedReceipt:
     """Signed, timestamped evidence receipt for a single agent action.
 

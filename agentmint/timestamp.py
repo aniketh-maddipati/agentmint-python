@@ -71,7 +71,7 @@ class TimestampError(Exception):
 
 # ── Result ─────────────────────────────────────────────────
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class TimestampResult:
     """Immutable result of an RFC 3161 timestamp operation.
 
