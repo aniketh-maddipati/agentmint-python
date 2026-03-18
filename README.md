@@ -1,8 +1,8 @@
-# agentmint
+# AgentMint
 
-Cryptographic receipts for AI agent actions.
+Unlock agent autonomy.Independent Notary for AI agent actions.
 
-**Every agent action gets a signed, timestamped, chained receipt — verifiable with OpenSSL alone. No vendor software required.**
+Your agent takes an action. AgentMint produces a signed, timestamped, chained crypto receipt proving what was authorized, what happened, and whether the two match — verifiable with OpenSSL alone. No vendor software. No trust required.
 
 ```
 pip install agentmint
@@ -10,29 +10,90 @@ pip install agentmint
 
 ---
 
-## Verify without installing agentmint
-
-Real receipts with real Ed25519 signatures and RFC 3161 timestamps are committed in the repo:
+## See receipts in 30 seconds
 
 ```bash
-cd examples/sample_evidence && bash VERIFY.sh
+git clone https://github.com/aniketh-maddipati/agentmint-python
+cd agentmint-python
+pip install -e .
+python examples/quickstart.py
 ```
 
-Requires only OpenSSL. [See what's inside →](examples/sample_evidence/)
+No API keys needed. The receipts are real — Ed25519 signed, RFC 3161 timestamped, independently verifiable. The quickstart walks you through the full lifecycle: plan creation, scope evaluation, receipt signing, evidence export, and verification.
+
+**Optional:** Set `ANTHROPIC_API_KEY` and/or `ELEVENLABS_API_KEY` to notarise real API calls instead of simulated actions.
+
+- Get an Anthropic key: [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys)
+- Get an ElevenLabs key: [elevenlabs.io/app/settings/api-keys](https://elevenlabs.io/app/settings/api-keys)
+
+### What you'll see
+
+The quickstart produces two receipts — one in-policy action and one violation — then exports a self-contained evidence package and runs verification live in your terminal.
+
+Here's what a receipt looks like:
+
+```json
+{
+  "id": "f45894e5-a562-4c59-977d-994c6b04acb2",
+  "type": "notarised_evidence",
+  "plan_id": "3805bfc6-...",              // ← links to the human-approved plan
+  "agent": "demo-agent",                  // ← who acted
+  "action": "read:reports:quarterly",      // ← what they did
+  "in_policy": true,                       // ← was it authorized?
+  "policy_reason": "matched scope read:reports:*",
+  "evidence_hash_sha512": "beaeb2c0ac...", // ← SHA-512 of the evidence dict
+  "observed_at": "2026-03-18T18:20:16Z",
+  "previous_receipt_hash": null,           // ← chain link (first receipt)
+  "signature": "938d4090...",              // ← Ed25519, covers all fields above
+  "timestamp": {
+    "tsa_url": "https://freetsa.org/tsr", // ← independent third-party time authority
+    "digest_hex": "4b106920..."
+  }
+}
+```
+
+The evidence package verifies with two commands:
+
+```bash
+cd evidence_output && unzip -o agentmint_evidence_*.zip
+bash VERIFY.sh           # timestamps — pure OpenSSL, no dependencies
+python3 verify_sigs.py   # signatures — needs pynacl
+```
+
+No AgentMint software needed to verify. Just OpenSSL and Python.
 
 ---
 
-## The problem
+## What this proves
 
-Control planes monitor agents. Observability tools log what happened. Neither produces proof. When your buyer's security team asks "show me evidence the agent stayed in scope during the Q4 incident" — unsigned app logs from the infrastructure under investigation aren't an answer.
+Your stack already logs what happened. AgentMint adds proof.
 
-## What agentmint does
+**What your stack produces today:**
 
-Two layers. Neither touches the API call.
+```json
+{
+  "timestamp": "2026-03-18T14:35:42Z",
+  "agent": "sre-agent",
+  "action": "kubectl rollout undo",
+  "target": "payments-api",
+  "result": "success"
+}
+```
 
-**Scope** (`core.py`) — evaluates the action against the plan's policy before execution. Returns allowed/denied/checkpoint. Sub-millisecond, in-memory. The agent framework acts on the verdict.
+No signature — anyone with DB access can edit this. No authorization context — was this action even allowed? Server timestamp — backdatable.
 
-**Notary** (`notary.py`) — signs a receipt after execution proving what happened and whether it was in policy. Ed25519 + RFC 3161 timestamp + receipt chain linking.
+**What AgentMint adds:**
+
+- **Ed25519 signature** — one bit changes, verification fails. Private key never leaves your environment.
+- **Authorization bound to execution** — the receipt proves the action was evaluated against a scoped plan at the time it happened.
+- **RFC 3161 timestamp** — independent time authority (FreeTSA). Backdating is mathematically impossible.
+- **Receipt chain** — each receipt includes the SHA-256 hash of the previous receipt. Delete or reorder any receipt, the chain breaks.
+
+Your buyer's security team doesn't want to trust your dashboard. They want to run `bash VERIFY.sh` and see proof.
+
+---
+
+## How it works
 
 ```
 Human approves plan → Agent requests action → Scope evaluates
@@ -45,89 +106,19 @@ Human approves plan → Agent requests action → Scope evaluates
                                         FreeTSA timestamps independently
 ```
 
----
+**1. Plan** — A human or policy engine defines what the agent can do. Which actions, which targets, how long. Signed at creation.
 
-## Quickstart
+**2. Scope** — Before execution, the action is evaluated against the plan's scope patterns. Sub-millisecond, in-memory. The agent framework acts on the verdict — AgentMint returns the answer, the framework enforces it.
 
-```bash
-git clone https://github.com/aniketh-maddipati/agentmint-python
-cd agentmint-python
-pip install -e .
-```
+**3. Execution** — The agent does its job. AgentMint is not in this path.
 
-### 1. Claude API — prompt injection defense
-
-```bash
-python examples/mcp_real_demo.py
-```
-
-A manager scopes Claude to `read:public:*`. Claude reads a file containing a `[SYSTEM]` injection telling it to read `secrets.txt`. AgentMint blocks it — the action matches a checkpoint. Every action gets a signed receipt. Requires `ANTHROPIC_API_KEY`.
-
-### 2. CrewAI + AWS S3 — real infrastructure
-
-```bash
-pip install crewai boto3
-python examples/combined_demo.py
-```
-
-A CrewAI agent with GPT-4o-mini reads from a real S3 bucket. AgentMint sits in the `@before_tool_call` hook. The agent reads a report containing an injection pointing at credentials — AgentMint blocks the follow-up read.
-
-### 3. ElevenLabs — notary layer, evidence packages
-
-```bash
-pip install rich anthropic elevenlabs
-python examples/elevenlabs_demo.py
-```
-
-Claude processes two documents and calls ElevenLabs TTS. One is clean, one contains an injection trying to trigger voice cloning. AgentMint notarises both, produces an evidence package, and runs a live tamper test.
-
-### 4. SRE incident response — Traversal demo
-
-```bash
-python examples/traversal_sre_demo.py
-```
-
-Four scenarios at the remediation boundary: happy-path rollback with human approval, scope violation blocked, autonomous L5 execution with policy engine, and checkpoint escalation for high-risk actions. Each produces a real signed receipt.
-
-### 5. MCP server
-
-```bash
-pip install fastmcp
-python -m mcp_server.server
-```
-
-Three tools: `agentmint_issue_plan`, `agentmint_authorize`, `agentmint_audit`.
+**4. Receipt** — After execution, the Notary binds authorization to execution. Ed25519 signature + RFC 3161 timestamp + evidence hash + chain link. One artifact.
 
 ---
 
-## Usage
+## Integrate with your agent
 
-### Scope evaluation — identity and least-privilege
-
-```python
-from agentmint import AgentMint
-
-mint = AgentMint()
-
-plan = mint.issue_plan(
-    action="file-analysis",
-    user="manager@company.com",
-    scope=["read:public:*", "write:summary:*"],
-    delegates_to=["claude-sonnet-4-20250514"],
-    requires_checkpoint=["read:secret:*", "delete:*"],
-)
-
-result = mint.delegate(plan, "claude-sonnet-4-20250514", "read:public:report.txt")
-
-if result.ok:
-    # proceed — result.receipt is Ed25519 signed
-    pass
-else:
-    # blocked — result.reason explains why
-    pass
-```
-
-### Notary — receipts with chain linking
+The Notary wraps any action with receipts:
 
 ```python
 from agentmint.notary import Notary
@@ -135,6 +126,7 @@ from pathlib import Path
 
 notary = Notary()
 
+# 1. Human or policy engine approves a scoped plan
 plan = notary.create_plan(
     user="admin@company.com",
     action="sre:remediation",
@@ -143,28 +135,25 @@ plan = notary.create_plan(
     delegates_to=["sre-agent"],
 )
 
-# Each receipt chains to the previous one
-r1 = notary.notarise(
+# 2. After your agent acts, notarise the action
+receipt = notary.notarise(
     action="remediate:rollback:payments-api",
     agent="sre-agent",
     plan=plan,
     evidence={"target": "payments-api", "from": "v2.3.1", "to": "v2.3.0"},
 )
-# r1.previous_receipt_hash is None (first in chain)
 
-r2 = notary.notarise(
-    action="remediate:rollback:auth-service",
-    agent="sre-agent",
-    plan=plan,
-    evidence={"target": "auth-service", "from": "v1.8.2", "to": "v1.8.1"},
-)
-# r2.previous_receipt_hash == SHA-256 of r1's signed payload
+print(receipt.in_policy)              # True — matched scope
+print(receipt.signature[:16])         # Ed25519 signature
+print(receipt.previous_receipt_hash)  # Chain link to previous receipt
 
-# Export evidence package (includes public key + verify scripts)
+# 3. Export verifiable evidence package
 zip_path = notary.export_evidence(Path("./evidence"))
 ```
 
-### CrewAI integration — 20 lines
+### Framework integrations
+
+**CrewAI** — `@before_tool_call` hook, ~20 lines:
 
 ```python
 from crewai.hooks import before_tool_call, ToolCallHookContext
@@ -186,77 +175,14 @@ def gate(ctx: ToolCallHookContext) -> bool | None:
     path = ctx.tool_input.get("path", "")
     action = f"s3:read:{path.replace('/', ':')}"
     result = mint.delegate(parent=plan, agent="data-analyst", action=action)
-    if result.ok:
-        return None      # allow
-    return False          # block
+    return None if result.ok else False
 ```
+
+**MCP** — runs as an MCP server with three tools. [Server →](mcp_server/)
+
+**Claude, ElevenLabs, AWS S3** — any API call can produce a receipt. [Demos →](examples/)
 
 ---
-
-## End-to-end scenario: banking agent
-
-A customer schedules a $500 weekly withdrawal. An attacker injects instructions into account notes trying to change it to $5,000.
-
-```python
-notary = Notary()
-
-plan = notary.create_plan(
-    user="platform-team@bank.com",
-    action="customer-transfers",
-    scope=["transfer:checking:savings:*"],
-    checkpoints=["transfer:*:external:*"],
-    delegates_to=["banking-agent-v2"],
-)
-
-# Legitimate $500 transfer
-r1 = notary.notarise(
-    action="transfer:checking:savings:500",
-    agent="banking-agent-v2", plan=plan,
-    evidence={"customer_id": "cust-8291", "amount": 500, "status": 200},
-)
-# r1.in_policy == True, r1.previous_receipt_hash == None
-
-# Injection attempt: $5000
-r2 = notary.notarise(
-    action="transfer:checking:savings:5000",
-    agent="banking-agent-v2", plan=plan,
-    evidence={"customer_id": "cust-8291", "amount": 5000, "status": 403,
-              "injection_detected": "SYSTEM OVERRIDE in account notes"},
-)
-# r2.previous_receipt_hash == SHA-256(r1) — chain intact
-
-zip_path = notary.export_evidence(Path("./evidence"))
-```
-
-**What the auditor gets:**
-
-```
-agentmint_evidence_*.zip
-├── receipt_index.json     ← start here
-├── plan.json              ← what was authorized
-├── public_key.pem         ← verify signatures independently
-├── receipts/
-│   ├── {r1}.json          ← $500 transfer, in policy
-│   ├── {r1}.tsr           ← FreeTSA timestamp
-│   ├── {r2}.json          ← $5000 attempt, flagged
-│   └── {r2}.tsr           ← FreeTSA timestamp
-├── freetsa_cacert.pem
-├── freetsa_tsa.crt
-├── VERIFY.sh              ← bash VERIFY.sh (timestamps, pure OpenSSL)
-└── verify_sigs.py         ← python3 verify_sigs.py (Ed25519 signatures)
-```
-
----
-
-## How it works
-
-1. **Plan issuance** — Human (or policy engine) approves a scoped plan. Allowed actions and escalation triggers defined upfront.
-
-2. **Scope evaluation** — Before executing, the agent calls `mint.delegate()`. AgentMint checks scope. Checkpoint patterns require re-approval.
-
-3. **Receipt + chain** — Every action produces an Ed25519 signed receipt. Each receipt includes the SHA-256 hash of the previous receipt. Deleting or reordering any receipt breaks the chain.
-
-4. **Evidence package** — Receipts export as a self-contained zip with the public key, CA certs, and verification scripts. Anyone can verify with OpenSSL and Python alone.
 
 ## Architecture
 
@@ -272,45 +198,51 @@ agentmint/
 └── decorator.py       # @require_receipt decorator
 ```
 
-## Technical details
+**Dependencies:** `pynacl` (Ed25519 signing) + `requests` (FreeTSA timestamping). That's it.
 
-- **Ed25519 signatures** — private key never leaves your environment
-- **RFC 3161 timestamps** — independent time authority (FreeTSA)
-- **SHA-512 evidence hashes** — receipts contain hashes, not content
-- **Receipt chain** — each receipt includes SHA-256 hash of the previous receipt
-- **Public key in package** — evidence zip includes PEM for independent verification
-- **Two verification scripts** — `VERIFY.sh` for timestamps (OpenSSL), `verify_sigs.py` for signatures (pynacl)
+**Three independent anchors** — no single party, including AgentMint, can tamper with the evidence:
 
-## Why this must be independent
+- **Ed25519 signature** — private key never leaves your environment. Verifiable with OpenSSL.
+- **RFC 3161 timestamp** — independent time authority. Only a hash leaves your environment.
+- **Commitment hashes** — receipts contain SHA-512 hashes, not content. Nothing sensitive is exposed.
 
-You cannot notarize your own actions. The proof layer must exist outside the agent vendor's infrastructure.
+---
 
-AgentMint doesn't replace control planes or observability. It produces the one artifact neither can: proof that holds up when you're not in the room.
+## Verify without installing AgentMint
 
-## Integrations
+Real receipts with real signatures and timestamps are committed in the repo:
 
-- **CrewAI** — `@before_tool_call` hook, ~20 lines. [Examples →](examples/)
-- **MCP** — runs as MCP server. [Server →](mcp_server/)
-- **LangChain** — ComplianceCallbackHandler RFC opened ([#35691](https://github.com/langchain-ai/langchain/issues/35691))
-- **Raw APIs** — ElevenLabs, Claude, AWS S3. Any API call can produce a receipt.
+```bash
+cd examples/sample_evidence && bash VERIFY.sh
+```
 
-## Status
+Requires only OpenSSL. [See what's inside →](examples/sample_evidence/)
 
-Running against production APIs — ElevenLabs, Claude, AWS S3. In design partnership conversations with enterprise AI companies.
-
-**[Book a conversation →](https://calendar.app.google/pT1Sz8EUtqowWABi8)**
+---
 
 ## Tests
 
 ```bash
 pip install pytest
-pytest tests/ -v
+pytest tests/ -v    # 76 tests
 ```
+
+---
+
+## Status
+
+Running against production APIs — ElevenLabs, Claude, AWS S3. In design partnership conversations with enterprise AI companies.
+
+Receipt schema aligned to AIUC-1, ISO 42001, EU AI Act Article 12.
+
+---
+
+## Want receipts for your agent?
+
+You bring the agent. I instrument it, map your actions to receipts, and hand you an evidence package your buyer's security team can verify independently.
+
+**[Book 15 minutes →](https://calendar.app.google/pT1Sz8EUtqowWABi8)** · [anikethcov@gmail.com](mailto:anikethcov@gmail.com) · [linkedin.com/in/anikethmaddipati](https://linkedin.com/in/anikethmaddipati)
 
 ## License
 
 MIT
-
-## Contact
-
-[linkedin.com/in/anikethmaddipati](https://linkedin.com/in/anikethmaddipati) · [agent-mint.dev](https://agent-mint.dev)
