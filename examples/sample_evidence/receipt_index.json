@@ -1,0 +1,59 @@
+{
+  "package_created": "2026-03-18T18:20:18.133397+00:00",
+  "plan_id": "3805bfc6-0acc-4f6a-b795-0b18fa2c87e1",
+  "plan_user": "security-team@example.com",
+  "total_receipts": 4,
+  "in_policy_count": 2,
+  "out_of_policy_count": 2,
+  "aiuc_controls": [
+    "E015",
+    "D003",
+    "B001"
+  ],
+  "receipts": [
+    {
+      "receipt_id": "f45894e5-a562-4c59-977d-994c6b04acb2",
+      "short_id": "f45894e5",
+      "action": "read:reports:quarterly",
+      "agent": "demo-agent",
+      "in_policy": true,
+      "policy_reason": "matched scope read:reports:*",
+      "observed_at": "2026-03-18T18:20:16.159727+00:00",
+      "previous_receipt_hash": null,
+      "tsr_file": "receipts/f45894e5-a562-4c59-977d-994c6b04acb2.tsr"
+    },
+    {
+      "receipt_id": "c9fda809-61a9-4ba7-af57-89b1faf119b9",
+      "short_id": "c9fda809",
+      "action": "read:reports:summary",
+      "agent": "demo-agent",
+      "in_policy": true,
+      "policy_reason": "matched scope read:reports:*",
+      "observed_at": "2026-03-18T18:20:16.488537+00:00",
+      "previous_receipt_hash": "0d936a21b806a581d6c89892d1f0b7d40c836b2d9775d0682a1daeb43332c903",
+      "tsr_file": "receipts/c9fda809-61a9-4ba7-af57-89b1faf119b9.tsr"
+    },
+    {
+      "receipt_id": "b2c5a871-8265-487e-9442-b7d0b0034b9a",
+      "short_id": "b2c5a871",
+      "action": "delete:reports:quarterly",
+      "agent": "demo-agent",
+      "in_policy": false,
+      "policy_reason": "matched checkpoint delete:*",
+      "observed_at": "2026-03-18T18:20:16.842817+00:00",
+      "previous_receipt_hash": "a8895492a42a8fabf0aa1e31e41bdf6ab8828a31948ecf861d030cb9bbed66c3",
+      "tsr_file": "receipts/b2c5a871-8265-487e-9442-b7d0b0034b9a.tsr"
+    },
+    {
+      "receipt_id": "4cc2202f-6912-4140-8a3a-c20e06f88dd3",
+      "short_id": "4cc2202f",
+      "action": "read:secrets:credentials",
+      "agent": "demo-agent",
+      "in_policy": false,
+      "policy_reason": "no scope pattern matched",
+      "observed_at": "2026-03-18T18:20:17.172223+00:00",
+      "previous_receipt_hash": "5d47f823830edd3087d9a35634d36927d9348f8e1227404eaea1a913d14c5d57",
+      "tsr_file": "receipts/4cc2202f-6912-4140-8a3a-c20e06f88dd3.tsr"
+    }
+  ]
+}

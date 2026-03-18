@@ -27,5 +27,5 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 ## Tools
 
 - `agentmint_issue_plan` — Human approves scoped actions
-- `agentmint_authorize` — Agent checks before acting
+- `agentmint_request_authorization` — Agent checks before acting
 - `agentmint_audit` — View receipt trail

@@ -1,0 +1,53 @@
+{
+  "id": "f45894e5-a562-4c59-977d-994c6b04acb2",
+  "type": "notarised_evidence",
+  "plan_id": "3805bfc6-0acc-4f6a-b795-0b18fa2c87e1",
+  "agent": "demo-agent",
+  "action": "read:reports:quarterly",
+  "in_policy": true,
+  "policy_reason": "matched scope read:reports:*",
+  "evidence_hash_sha512": "beaeb2c0ac2d1ffacac644578fa9d8fb5e9127961e0deb4e8f4610d218fefda6d30a9482ce654317f44ebd8b3b8e0309c67274a1834b645afb4a0be8d5e19b05",
+  "evidence": {
+    "request": {
+      "method": "GET",
+      "resource": "/api/reports/quarterly",
+      "intent": "read quarterly financial report"
+    },
+    "response": {
+      "outcome": "success",
+      "status_code": 200,
+      "bytes": 4096,
+      "content_type": "application/json"
+    },
+    "delegation": {
+      "delegated_by": "security-team@example.com",
+      "delegation_depth": 1,
+      "scope_pattern_evaluated": "read:reports:*",
+      "scope_verdict": "match"
+    },
+    "compliance": {
+      "controls_exercised": {
+        "AIUC-1:E015": "agent action logged with signature and timestamp",
+        "AIUC-1:D003": "tool call evaluated against scope restriction"
+      },
+      "eu_ai_act": "Article 12(2)(c) \u2014 monitoring of AI system operation",
+      "iso_42001": "Clause 9 \u2014 performance evaluation evidence"
+    },
+    "content_commitment": {
+      "hash_algorithm": "SHA-512",
+      "content_excluded": true,
+      "verification": "hash original data with SHA-512, compare to evidence_hash_sha512"
+    }
+  },
+  "observed_at": "2026-03-18T18:20:16.159727+00:00",
+  "aiuc_controls": [
+    "E015",
+    "D003",
+    "B001"
+  ],
+  "signature": "938d40902f7a01ac63524d5fbeed1c7b66edd6591da44559932f5175f8adfbeec88893b77df85d3101098be2ce76c46cf73912fcdd7175589ceebcda1ae77202",
+  "timestamp": {
+    "tsa_url": "https://freetsa.org/tsr",
+    "digest_hex": "4b106920f0fa327ffe25d651fff7d7949a69fb58d50e65a7cb6f8aa6e417c2f37431c78a48ec23cc7804746e3f9a1b7fdaf33c4e9b99915e8224a20d373a95c6"
+  }
+}

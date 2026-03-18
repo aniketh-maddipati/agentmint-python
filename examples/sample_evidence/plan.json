@@ -1,0 +1,18 @@
+{
+  "id": "3805bfc6-0acc-4f6a-b795-0b18fa2c87e1",
+  "type": "plan",
+  "user": "security-team@example.com",
+  "action": "demo",
+  "scope": [
+    "read:reports:*"
+  ],
+  "checkpoints": [
+    "delete:*"
+  ],
+  "delegates_to": [
+    "demo-agent"
+  ],
+  "issued_at": "2026-03-18T18:20:16.158731+00:00",
+  "expires_at": "2026-03-18T19:20:16.158731+00:00",
+  "signature": "cf898075e7e0efc4f58a41352e8d85f4d0ac15336451e859280373124d2923a7aff80ad0e88c7be6c343bbcb18f7f76a5b1ed06fa342b264b65c9cc8e1eb420f"
+}

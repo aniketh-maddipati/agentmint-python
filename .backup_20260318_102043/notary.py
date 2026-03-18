@@ -307,8 +307,7 @@ class EvidencePackage:
         receipts/{id}.tsr     Timestamp responses
         freetsa_cacert.pem    CA certificate for verification
         freetsa_tsa.crt       TSA certificate for verification
-        VERIFY.sh             Checks RFC 3161 timestamps (pure OpenSSL)
-        verify_sigs.py        Checks Ed25519 signatures (needs pynacl)
+        VERIFY.sh             Checks Ed25519 signatures + RFC 3161 timestamps
     """
 
     __slots__ = ("_plan", "_receipts", "_public_key_pem")
@@ -344,7 +343,6 @@ class EvidencePackage:
             self._write_public_key(zf)
             self._write_certs(zf, ca_paths)
             self._write_verify_script(zf)
-            self._write_verify_sigs_script(zf)
 
         self._set_verify_executable(zip_path)
         return zip_path
@@ -407,9 +405,6 @@ class EvidencePackage:
 
     def _write_verify_script(self, zf: zipfile.ZipFile) -> None:
         zf.writestr("VERIFY.sh", _build_verify_script(self._receipts))
-
-    def _write_verify_sigs_script(self, zf: zipfile.ZipFile) -> None:
-        zf.writestr("verify_sigs.py", _VERIFY_SIGS_PY)
 
     @staticmethod
     def _fetch_certs_safe(certs_dir: Path) -> Optional[tuple[Path, Path]]:
@@ -617,26 +612,48 @@ class Notary:
         return self._package.export(output_dir, certs_dir)
 
 
-# ── VERIFY.sh (timestamps only — pure OpenSSL, zero dependencies) ──
+# ── VERIFY.sh ──────────────────────────────────────────────
 
 def _build_verify_script(receipts: list[NotarisedReceipt]) -> str:
-    """Generate VERIFY.sh — checks RFC 3161 timestamps with OpenSSL.
+    """Generate a self-contained bash verification script.
 
-    For Ed25519 signature verification, see verify_sigs.py in the same package.
+    Checks both Ed25519 signatures (if jq + public_key.pem available)
+    and RFC 3161 timestamps.
     """
     lines = [
         "#!/bin/bash",
-        "# AgentMint Evidence Verification — RFC 3161 Timestamps",
-        "# Requires: openssl",
-        "# For Ed25519 signatures: python3 verify_sigs.py",
+        "#",
+        "# AgentMint Evidence Verification",
+        "#",
+        "# Checks Ed25519 signatures and RFC 3161 timestamps.",
+        "# Requires: openssl (any recent version)",
+        "# Optional: jq (for Ed25519 signature verification)",
+        "# Does NOT require AgentMint software.",
+        "#",
         "",
         'set -euo pipefail',
-        'cd "$(dirname "$0")"',
+        'SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"',
+        'cd "$SCRIPT_DIR"',
         "",
         "VERIFIED=0",
         "FAILED=0",
         "FLAGGED=0",
+        "SIG_OK=0",
+        "SIG_FAIL=0",
+        "SIG_SKIP=0",
         "TOTAL=0",
+        "",
+        "# Check for jq (needed for signature verification)",
+        "HAS_JQ=0",
+        "if command -v jq > /dev/null 2>&1; then",
+        "  HAS_JQ=1",
+        "fi",
+        "",
+        "# Check for public key",
+        "HAS_PK=0",
+        'if [ -f "public_key.pem" ]; then',
+        "  HAS_PK=1",
+        "fi",
         "",
     ]
 
@@ -655,6 +672,31 @@ def _build_verify_script(receipts: list[NotarisedReceipt]) -> str:
             lines.append(f'echo "  ⚠ FLAGGED: {reason_escaped}"')
             lines.append("FLAGGED=$((FLAGGED + 1))")
 
+        # Ed25519 signature check
+        lines.append("")
+        lines.append("# Ed25519 signature verification")
+        lines.append('if [ "$HAS_JQ" -eq 1 ] && [ "$HAS_PK" -eq 1 ]; then')
+        lines.append(f'  SIG_HEX=$(jq -r ".signature" "receipts/{rid}.json")')
+        lines.append(f'  # Extract signable fields (everything except signature and timestamp)')
+        lines.append(f'  jq -cS "del(.signature, .timestamp)" "receipts/{rid}.json" > "/tmp/agentmint_verify_{rid}.bin"')
+        lines.append(f'  echo -n "$SIG_HEX" | xxd -r -p > "/tmp/agentmint_sig_{rid}.bin"')
+        lines.append(f'  if openssl pkeyutl -verify -pubin -inkey public_key.pem \\')
+        lines.append(f'      -sigfile "/tmp/agentmint_sig_{rid}.bin" \\')
+        lines.append(f'      -in "/tmp/agentmint_verify_{rid}.bin" \\')
+        lines.append(f'      -rawin > /dev/null 2>&1; then')
+        lines.append(f'    echo "  Signature: ✓ Ed25519 verified"')
+        lines.append(f'    SIG_OK=$((SIG_OK + 1))')
+        lines.append(f'  else')
+        lines.append(f'    echo "  Signature: ✗ Ed25519 FAILED"')
+        lines.append(f'    SIG_FAIL=$((SIG_FAIL + 1))')
+        lines.append(f'  fi')
+        lines.append(f'  rm -f "/tmp/agentmint_verify_{rid}.bin" "/tmp/agentmint_sig_{rid}.bin"')
+        lines.append(f'else')
+        lines.append(f'  echo "  Signature: (skipped — install jq for Ed25519 verification)"')
+        lines.append(f'  SIG_SKIP=$((SIG_SKIP + 1))')
+        lines.append(f'fi')
+
+        # RFC 3161 timestamp check
         if has_ts:
             lines.append(f'if openssl ts -verify \\')
             lines.append(f'    -in "receipts/{rid}.tsr" \\')
@@ -662,7 +704,7 @@ def _build_verify_script(receipts: list[NotarisedReceipt]) -> str:
             lines.append(f'    -CAfile "freetsa_cacert.pem" \\')
             lines.append(f'    -untrusted "freetsa_tsa.crt" \\')
             lines.append(f'    > /dev/null 2>&1; then')
-            lines.append(f'  echo "  Timestamp: ✓ verified"')
+            lines.append(f'  echo "  Timestamp: ✓ RFC 3161 verified"')
             lines.append(f'  VERIFIED=$((VERIFIED + 1))')
             lines.append(f'else')
             lines.append(f'  echo "  Timestamp: ✗ FAILED"')
@@ -673,73 +715,27 @@ def _build_verify_script(receipts: list[NotarisedReceipt]) -> str:
 
         lines.append("TOTAL=$((TOTAL + 1))")
         lines.append('echo ""')
+        lines.append("")
 
     lines.extend([
         'echo "════════════════════════════════════════"',
-        'echo "  Timestamps: $VERIFIED / $TOTAL verified"',
-        'echo "  Failures:   $FAILED"',
-        'echo "  Flagged:    $FLAGGED out-of-policy"',
-        'echo "  Signatures: run python3 verify_sigs.py"',
+        'echo "  AgentMint Evidence Package"',
+        'echo "  Receipts:            $TOTAL"',
+        'echo "  Timestamps verified: $VERIFIED / $TOTAL"',
+        'echo "  Timestamp failures:  $FAILED"',
+        'echo "  Signatures verified: $SIG_OK"',
+        'echo "  Signature failures:  $SIG_FAIL"',
+        'echo "  Signatures skipped:  $SIG_SKIP"',
+        'echo "  Out-of-policy:       $FLAGGED"',
+        'echo "  Verified at:         $(date -u)"',
         'echo "════════════════════════════════════════"',
         "",
-        '[ "$FAILED" -gt 0 ] && exit 1',
-        'exit 0',
+        'if [ "$FAILED" -gt 0 ] || [ "$SIG_FAIL" -gt 0 ]; then',
+        '  exit 1',
+        'fi',
     ])
 
     return "\n".join(lines) + "\n"
-
-
-# ── verify_sigs.py (Ed25519 signatures — needs pynacl) ────
-
-_VERIFY_SIGS_PY = '''\
-#!/usr/bin/env python3
-"""Verify Ed25519 signatures on all receipts. Requires: pip install pynacl"""
-import json, sys, base64
-from pathlib import Path
-
-try:
-    from nacl.signing import VerifyKey
-    from nacl.exceptions import BadSignatureError
-except ImportError:
-    print("Install pynacl: pip install pynacl")
-    sys.exit(1)
-
-def canonical(d):
-    return json.dumps(d, sort_keys=True, separators=(",", ":")).encode()
-
-def load_pem_public_key(path):
-    lines = path.read_text().strip().split("\\n")
-    b64 = "".join(lines[1:-1])
-    der = base64.b64decode(b64)
-    # SPKI prefix is 12 bytes, Ed25519 key is last 32
-    return VerifyKey(der[12:])
-
-here = Path(__file__).parent
-pk_path = here / "public_key.pem"
-if not pk_path.exists():
-    print("No public_key.pem found"); sys.exit(1)
-
-vk = load_pem_public_key(pk_path)
-ok = fail = 0
-
-for rfile in sorted((here / "receipts").glob("*.json")):
-    receipt = json.loads(rfile.read_text())
-    sig = bytes.fromhex(receipt["signature"])
-    # Reconstruct signable dict (everything except signature and timestamp)
-    signable = {k: v for k, v in receipt.items() if k not in ("signature", "timestamp")}
-    try:
-        vk.verify(canonical(signable), sig)
-        status = "✓"
-        ok += 1
-    except BadSignatureError:
-        status = "✗ FAILED"
-        fail += 1
-    tag = "in policy" if receipt.get("in_policy") else "VIOLATION"
-    print(f"  {status}  {receipt['id'][:8]}  {receipt['action']}  ({tag})")
-
-print(f"\\nSignatures: {ok} verified, {fail} failed")
-sys.exit(1 if fail else 0)
-'''
 
 
 # ── Utilities ──────────────────────────────────────────────

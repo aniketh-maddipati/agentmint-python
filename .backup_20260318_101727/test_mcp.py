@@ -17,7 +17,7 @@ async def test():
         plan_id = result.data["plan_id"]
         
         # Request authorization (should pass)
-        result = await client.call_tool("agentmint_authorize", {
+        result = await client.call_tool("agentmint_request_authorization", {
             "plan_id": plan_id,
             "agent": "file-agent",
             "action": "read:docs:report.pdf"
@@ -25,7 +25,7 @@ async def test():
         print("Auth (in scope):", result.data)
         
         # Request authorization (should fail - out of scope)
-        result = await client.call_tool("agentmint_authorize", {
+        result = await client.call_tool("agentmint_request_authorization", {
             "plan_id": plan_id,
             "agent": "file-agent",
             "action": "delete:docs:report.pdf"
@@ -33,7 +33,7 @@ async def test():
         print("Auth (out of scope):", result.data)
         
         # Request authorization (should fail - wrong agent)
-        result = await client.call_tool("agentmint_authorize", {
+        result = await client.call_tool("agentmint_request_authorization", {
             "plan_id": plan_id,
             "agent": "rogue-agent",
             "action": "read:docs:report.pdf"

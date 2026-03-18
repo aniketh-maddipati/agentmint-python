@@ -1,0 +1,52 @@
+{
+  "id": "4cc2202f-6912-4140-8a3a-c20e06f88dd3",
+  "type": "notarised_evidence",
+  "plan_id": "3805bfc6-0acc-4f6a-b795-0b18fa2c87e1",
+  "agent": "demo-agent",
+  "action": "read:secrets:credentials",
+  "in_policy": false,
+  "policy_reason": "no scope pattern matched",
+  "evidence_hash_sha512": "a4bff9c63652bef9d8ae7ced21831128ca6d4880e402aebec00c6625a25a824457e7d2e1078a22edbfa506aa2ff79391c17e6e0fb08368ad977d1d0b7aa26bf1",
+  "evidence": {
+    "request": {
+      "method": "GET",
+      "resource": "/api/secrets/credentials",
+      "intent": "read credentials"
+    },
+    "response": {
+      "outcome": "blocked",
+      "reason": "action_not_in_scope"
+    },
+    "delegation": {
+      "delegated_by": "security-team@example.com",
+      "delegation_depth": 1,
+      "scope_pattern_evaluated": "read:reports:*",
+      "scope_verdict": "miss"
+    },
+    "compliance": {
+      "controls_exercised": {
+        "AIUC-1:E015": "agent action logged with signature and timestamp",
+        "AIUC-1:D003": "unauthorized tool call blocked before execution"
+      },
+      "eu_ai_act": "Article 12(2)(a) \u2014 risk situation identified and recorded",
+      "iso_42001": "Clause 8 \u2014 AI risk treatment evidence"
+    },
+    "content_commitment": {
+      "hash_algorithm": "SHA-512",
+      "content_excluded": true,
+      "verification": "hash original data with SHA-512, compare to evidence_hash_sha512"
+    }
+  },
+  "observed_at": "2026-03-18T18:20:17.172223+00:00",
+  "aiuc_controls": [
+    "E015",
+    "D003",
+    "B001"
+  ],
+  "previous_receipt_hash": "5d47f823830edd3087d9a35634d36927d9348f8e1227404eaea1a913d14c5d57",
+  "signature": "deddc283cf7b8f77a0141117995d77b5e4a4229899459e4bb6774db3e751ed9caf4de1201c26ca1b1dcf7f2411c9bfbc34ca2293ee3d17ece2474ea60f9d960f",
+  "timestamp": {
+    "tsa_url": "https://freetsa.org/tsr",
+    "digest_hex": "5d0e66a6780b1b9df8cfefb7129765573a8acdcbd5b622d067c638b2d7bf6938f2f9e35843168f0c425f0db299ba43cb6d6448fde3a01e8d11253b0ca4951f8f"
+  }
+}

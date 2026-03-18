@@ -1,7 +1,6 @@
 """Ed25519 key persistence — generate on first run, load thereafter."""
 
 from __future__ import annotations
-import base64
 import os
 from pathlib import Path
 from nacl.signing import SigningKey, VerifyKey
@@ -11,26 +10,14 @@ DEFAULT_KEY_DIR = Path(".agentmint")
 PRIVATE_KEY_FILE = "signing_key.bin"
 PUBLIC_KEY_FILE = "public_key.pem"
 
-# Ed25519 SPKI prefix (RFC 8410): 302a300506032b6570032100
-_SPKI_PREFIX = bytes.fromhex("302a300506032b6570032100")
 
-
-def pem_wrap(raw_public_key: bytes, label: str = "PUBLIC KEY") -> str:
-    """Wrap a raw Ed25519 public key in SPKI PEM format (RFC 8410).
-
-    The result is directly usable with:
-        openssl pkeyutl -verify -pubin -inkey public_key.pem ...
-
-    Args:
-        raw_public_key: 32-byte Ed25519 public key.
-        label: PEM label (default: PUBLIC KEY).
-
-    Returns:
-        PEM-encoded string.
-    """
-    der = _SPKI_PREFIX + raw_public_key
+def _pem_wrap(raw: bytes, label: str = "PUBLIC KEY") -> str:
+    import base64
+    # Ed25519 SPKI prefix (RFC 8410): 302a300506032b6570032100
+    spki_prefix = bytes.fromhex("302a300506032b6570032100")
+    der = spki_prefix + raw
     b64 = base64.b64encode(der).decode()
-    lines = [b64[i:i + 64] for i in range(0, len(b64), 64)]
+    lines = [b64[i:i+64] for i in range(0, len(b64), 64)]
     return f"-----BEGIN {label}-----\n" + "\n".join(lines) + f"\n-----END {label}-----\n"
 
 
@@ -58,7 +45,7 @@ class KeyStore:
             sk_path.write_bytes(bytes(self._sk))
             os.chmod(sk_path, 0o600)
             # Write PEM public key for OpenSSL verification
-            pk_path.write_text(pem_wrap(bytes(self._vk)))
+            pk_path.write_text(_pem_wrap(bytes(self._vk)))
             os.chmod(pk_path, 0o644)
 
     @property
@@ -68,11 +55,6 @@ class KeyStore:
     @property
     def verify_key(self) -> VerifyKey:
         return self._vk
-
-    @property
-    def public_key_pem(self) -> str:
-        """PEM-encoded public key string (SPKI format, RFC 8410)."""
-        return pem_wrap(bytes(self._vk))
 
     @property
     def public_key_pem_path(self) -> Path:

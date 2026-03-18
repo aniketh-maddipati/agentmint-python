@@ -1,7 +1,7 @@
 [project]
 name = "agentmint"
 version = "0.1.0"
-description = "Cryptographic receipts for AI agent actions"
+description = "Cryptographic proof that a human approved an AI agent action"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
@@ -16,18 +16,14 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
+    "elevenlabs>=2.38.0",
     "pynacl>=1.5.0",
-    "requests>=2.28.0",
+    "python-dotenv>=1.2.2",
+    "rich>=14.3.3",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0.0"]
-demos = [
-    "elevenlabs>=2.38.0",
-    "rich>=14.3.3",
-    "python-dotenv>=1.2.2",
-    "anthropic>=0.40.0",
-]
 
 [project.urls]
 Homepage = "https://github.com/aniketh-maddipati/agentmint-python"

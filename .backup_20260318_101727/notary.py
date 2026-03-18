@@ -10,7 +10,6 @@ A receipt proves:
     - Whether it was within policy (scope evaluation result)
     - When it was observed (RFC 3161 timestamp via FreeTSA)
     - Who approved the policy (chain to plan receipt)
-    - Chain integrity (SHA-256 hash of previous receipt)
 
 Verification requires only OpenSSL. No AgentMint software or account.
 
@@ -22,7 +21,6 @@ AIUC-1 control mapping:
 
 from __future__ import annotations
 
-import base64
 import hashlib
 import json
 import shutil
@@ -68,9 +66,6 @@ MIN_TTL: Final[int] = 1
 
 AIUC_CONTROLS: Final[tuple[str, ...]] = ("E015", "D003", "B001")
 
-# Ed25519 SPKI prefix (RFC 8410): 302a300506032b6570032100
-_SPKI_PREFIX: Final[bytes] = bytes.fromhex("302a300506032b6570032100")
-
 
 # ── Errors ─────────────────────────────────────────────────
 
@@ -82,6 +77,7 @@ class NotaryError(Exception):
 # ── Validation ─────────────────────────────────────────────
 
 def _require_non_empty_string(value: str, name: str, max_len: int) -> str:
+    """Validate a required string field."""
     if not isinstance(value, str):
         raise NotaryError(f"{name} must be a string, got {type(value).__name__}")
     stripped = value.strip()
@@ -95,6 +91,7 @@ def _require_non_empty_string(value: str, name: str, max_len: int) -> str:
 
 
 def _require_string_list(value: Sequence[str] | None, name: str) -> tuple[str, ...]:
+    """Validate an optional list of non-empty strings."""
     if value is None:
         return ()
     if not isinstance(value, (list, tuple)):
@@ -108,6 +105,7 @@ def _require_string_list(value: Sequence[str] | None, name: str) -> tuple[str, .
 
 
 def _require_evidence(evidence: Any) -> dict[str, Any]:
+    """Validate and normalize evidence dict."""
     if not isinstance(evidence, dict):
         raise NotaryError(f"evidence must be a dict, got {type(evidence).__name__}")
     try:
@@ -122,24 +120,22 @@ def _require_evidence(evidence: Any) -> dict[str, Any]:
 
 
 def _clamp_ttl(ttl: int) -> int:
+    """Clamp TTL to valid range."""
     return max(MIN_TTL, min(MAX_TTL, ttl))
-
-
-# ── PEM helper ─────────────────────────────────────────────
-
-def _public_key_pem(verify_key: VerifyKey) -> str:
-    """Encode an Ed25519 public key as SPKI PEM (RFC 8410)."""
-    der = _SPKI_PREFIX + bytes(verify_key)
-    b64 = base64.b64encode(der).decode()
-    lines = [b64[i:i + 64] for i in range(0, len(b64), 64)]
-    return f"-----BEGIN PUBLIC KEY-----\n" + "\n".join(lines) + f"\n-----END PUBLIC KEY-----\n"
 
 
 # ── Policy evaluation ─────────────────────────────────────
 
 @dataclass(frozen=True)
 class PolicyEvaluation:
-    """Result of evaluating an action against a plan's policy rules."""
+    """Result of evaluating an action against a plan's policy rules.
+
+    Evaluation order:
+        1. Plan expiry — expired plans deny everything
+        2. Agent authorization — agent must be in delegates_to
+        3. Checkpoints — matched actions are flagged out-of-policy
+        4. Scope — action must match at least one scope pattern
+    """
     in_policy: bool
     reason: str
 
@@ -152,21 +148,37 @@ def evaluate_policy(
     plan_delegates: Sequence[str],
     plan_expired: bool,
 ) -> PolicyEvaluation:
-    """Evaluate whether an action is within policy. Pure function."""
+    """Evaluate whether an action is within policy.
+
+    This is a pure function with no side effects. Exposed publicly
+    so it can be tested independently of signing and timestamping.
+    """
     if plan_expired:
         return PolicyEvaluation(False, "plan expired")
+
     if plan_delegates and agent not in plan_delegates:
         return PolicyEvaluation(False, f"agent '{agent}' not in delegates_to")
+
     for pattern in plan_checkpoints:
         if _matches_pattern(action, pattern):
             return PolicyEvaluation(False, f"matched checkpoint {pattern}")
+
     for pattern in plan_scope:
         if _matches_pattern(action, pattern):
             return PolicyEvaluation(True, f"matched scope {pattern}")
+
     return PolicyEvaluation(False, "no scope pattern matched")
 
 
 def _matches_pattern(action: str, pattern: str) -> bool:
+    """Match an action string against a scope/checkpoint pattern.
+
+    Patterns:
+        "*"                        matches everything
+        "tts:*"                    matches "tts" and "tts:anything:nested"
+        "sre:rollback:attacker*"   matches any action starting with that prefix
+        "tts:standard"             matches only "tts:standard" exactly
+    """
     if pattern == "*":
         return True
     if pattern.endswith(":*"):
@@ -181,14 +193,21 @@ def _matches_pattern(action: str, pattern: str) -> bool:
 # ── Signing ────────────────────────────────────────────────
 
 def _canonical_json(data: dict[str, Any]) -> bytes:
+    """Deterministic JSON serialization for signing.
+
+    Same input always produces same bytes. This is critical —
+    signature verification depends on byte-exact reproduction.
+    """
     return json.dumps(data, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
 
 def _sign(key: SigningKey, data: dict[str, Any]) -> str:
+    """Sign a dict with Ed25519, return hex signature."""
     return key.sign(_canonical_json(data)).signature.hex()
 
 
 def _verify_signature(verify_key: VerifyKey, data: dict[str, Any], signature_hex: str) -> bool:
+    """Verify an Ed25519 signature on a dict."""
     try:
         verify_key.verify(_canonical_json(data), bytes.fromhex(signature_hex))
         return True
@@ -200,7 +219,11 @@ def _verify_signature(verify_key: VerifyKey, data: dict[str, Any], signature_hex
 
 @dataclass(frozen=True)
 class PlanReceipt:
-    """Signed plan defining what actions are allowed."""
+    """Signed plan defining what actions are allowed.
+
+    Created by a human. Immutable after construction.
+    The signature covers all fields except itself.
+    """
     id: str
     user: str
     action: str
@@ -220,6 +243,7 @@ class PlanReceipt:
         return _utc_now() >= datetime.fromisoformat(self.expires_at)
 
     def signable_dict(self) -> dict[str, Any]:
+        """Fields included in the signature (everything except signature)."""
         return {
             "id": self.id,
             "type": "plan",
@@ -240,7 +264,11 @@ class PlanReceipt:
 
 @dataclass(frozen=True)
 class NotarisedReceipt:
-    """Signed, timestamped evidence receipt for a single agent action."""
+    """Signed, timestamped evidence receipt for a single agent action.
+
+    Core artifact. Proves what happened, policy evaluation result,
+    and when — all independently verifiable.
+    """
     id: str
     plan_id: str
     agent: str
@@ -251,8 +279,6 @@ class NotarisedReceipt:
     evidence: dict[str, Any]
     observed_at: str
     signature: str
-    # NEW: chain linking
-    previous_receipt_hash: Optional[str] = None
     timestamp_result: Optional[TimestampResult] = None
     aiuc_controls: tuple[str, ...] = AIUC_CONTROLS
 
@@ -261,7 +287,8 @@ class NotarisedReceipt:
         return self.id[:8]
 
     def signable_dict(self) -> dict[str, Any]:
-        d = {
+        """Fields included in the signature."""
+        return {
             "id": self.id,
             "type": "notarised_evidence",
             "plan_id": self.plan_id,
@@ -274,10 +301,6 @@ class NotarisedReceipt:
             "observed_at": self.observed_at,
             "aiuc_controls": list(self.aiuc_controls),
         }
-        # Chain hash is included in signature if present
-        if self.previous_receipt_hash is not None:
-            d["previous_receipt_hash"] = self.previous_receipt_hash
-        return d
 
     def to_dict(self) -> dict[str, Any]:
         d = self.signable_dict()
@@ -299,24 +322,21 @@ class EvidencePackage:
     """Collects receipts into a portable, verifiable zip.
 
     Contents:
-        receipt_index.json    Table of contents
+        receipt_index.json    Table of contents (Rajiv reads this first)
         plan.json             The signed plan receipt
-        public_key.pem        Ed25519 public key (SPKI PEM, RFC 8410)
         receipts/{id}.json    Individual signed receipts
         receipts/{id}.tsq     Timestamp queries
         receipts/{id}.tsr     Timestamp responses
         freetsa_cacert.pem    CA certificate for verification
         freetsa_tsa.crt       TSA certificate for verification
-        VERIFY.sh             Checks RFC 3161 timestamps (pure OpenSSL)
-        verify_sigs.py        Checks Ed25519 signatures (needs pynacl)
+        VERIFY.sh             One-command verification (executable)
     """
 
-    __slots__ = ("_plan", "_receipts", "_public_key_pem")
+    __slots__ = ("_plan", "_receipts")
 
-    def __init__(self, plan: PlanReceipt, public_key_pem: str = "") -> None:
+    def __init__(self, plan: PlanReceipt) -> None:
         self._plan = plan
         self._receipts: list[NotarisedReceipt] = []
-        self._public_key_pem = public_key_pem
 
     @property
     def plan(self) -> PlanReceipt:
@@ -330,6 +350,15 @@ class EvidencePackage:
         self._receipts.append(receipt)
 
     def export(self, output_dir: Path, certs_dir: Optional[Path] = None) -> Path:
+        """Export as a self-contained zip file.
+
+        Args:
+            output_dir: Where to write the zip.
+            certs_dir: Where to cache FreeTSA certs. Defaults to temp dir.
+
+        Returns:
+            Path to the zip file.
+        """
         output_dir.mkdir(parents=True, exist_ok=True)
         ts = _utc_now().strftime("%Y%m%d_%H%M%S")
         zip_path = output_dir / f"agentmint_evidence_{ts}.zip"
@@ -341,10 +370,8 @@ class EvidencePackage:
             self._write_plan(zf)
             self._write_receipts(zf)
             self._write_index(zf)
-            self._write_public_key(zf)
             self._write_certs(zf, ca_paths)
             self._write_verify_script(zf)
-            self._write_verify_sigs_script(zf)
 
         self._set_verify_executable(zip_path)
         return zip_path
@@ -374,7 +401,6 @@ class EvidencePackage:
                 "in_policy": r.in_policy,
                 "policy_reason": r.policy_reason,
                 "observed_at": r.observed_at,
-                "previous_receipt_hash": r.previous_receipt_hash,
                 "tsr_file": f"receipts/{r.id}.tsr" if has_ts else None,
             })
 
@@ -390,10 +416,6 @@ class EvidencePackage:
         }
         zf.writestr("receipt_index.json", json.dumps(index, indent=2))
 
-    def _write_public_key(self, zf: zipfile.ZipFile) -> None:
-        if self._public_key_pem:
-            zf.writestr("public_key.pem", self._public_key_pem)
-
     def _write_certs(
         self,
         zf: zipfile.ZipFile,
@@ -408,9 +430,6 @@ class EvidencePackage:
     def _write_verify_script(self, zf: zipfile.ZipFile) -> None:
         zf.writestr("VERIFY.sh", _build_verify_script(self._receipts))
 
-    def _write_verify_sigs_script(self, zf: zipfile.ZipFile) -> None:
-        zf.writestr("verify_sigs.py", _VERIFY_SIGS_PY)
-
     @staticmethod
     def _fetch_certs_safe(certs_dir: Path) -> Optional[tuple[Path, Path]]:
         try:
@@ -420,6 +439,7 @@ class EvidencePackage:
 
     @staticmethod
     def _set_verify_executable(zip_path: Path) -> None:
+        """Rewrite zip so VERIFY.sh has executable permissions."""
         tmp_path = zip_path.with_suffix(".tmp.zip")
         with zipfile.ZipFile(zip_path, "r") as zin:
             with zipfile.ZipFile(tmp_path, "w", zipfile.ZIP_DEFLATED) as zout:
@@ -437,6 +457,10 @@ class EvidencePackage:
 class Notary:
     """Observe, evaluate, sign, timestamp.
 
+    Stateless signer. The only mutable state is the evidence package
+    collector, which is a convenience — every method also returns
+    its result directly.
+
     Usage:
         notary = Notary()
         plan = notary.create_plan(user="admin@co.com", ...)
@@ -444,20 +468,21 @@ class Notary:
         zip_path = notary.export_evidence(Path("./evidence"))
     """
 
-    __slots__ = ("_key", "_vk", "_package", "_last_receipt_hash")
+    __slots__ = ("_key", "_vk", "_package")
 
     def __init__(self) -> None:
         self._key = SigningKey.generate()
         self._vk = self._key.verify_key
         self._package: Optional[EvidencePackage] = None
-        self._last_receipt_hash: Optional[str] = None
 
     @property
     def verify_key(self) -> VerifyKey:
+        """Public verification key. Can be shared freely."""
         return self._vk
 
     @property
     def verify_key_hex(self) -> str:
+        """Hex-encoded public key for inclusion in evidence packages."""
         return self._vk.encode(encoder=HexEncoder).decode("ascii")
 
     def create_plan(
@@ -469,7 +494,21 @@ class Notary:
         delegates_to: list[str] | None = None,
         ttl_seconds: int = DEFAULT_TTL,
     ) -> PlanReceipt:
-        """Create a signed plan receipt. Resets the receipt chain."""
+        """Create a signed plan receipt.
+
+        Represents a human approving scoped authorization.
+
+        Args:
+            user: Human approver identity.
+            action: High-level action being authorized.
+            scope: Allowed action patterns (e.g. ["tts:standard:*"]).
+            checkpoints: Patterns requiring human re-approval.
+            delegates_to: Agents allowed to act under this plan.
+            ttl_seconds: Validity period (clamped to 1-3600).
+
+        Returns:
+            Signed PlanReceipt.
+        """
         user = _require_non_empty_string(user, "user", MAX_IDENTITY_LEN)
         action = _require_non_empty_string(action, "action", MAX_ACTION_LEN)
         scope_t = _require_string_list(scope, "scope")
@@ -478,6 +517,7 @@ class Notary:
         ttl = _clamp_ttl(ttl_seconds)
 
         now = _utc_now()
+
         plan_id = str(uuid.uuid4())
         issued_at = now.isoformat()
         expires_at = (now + timedelta(seconds=ttl)).isoformat()
@@ -507,9 +547,7 @@ class Notary:
             signature=signature,
         )
 
-        # Reset chain and create new evidence package with public key
-        self._last_receipt_hash = None
-        self._package = EvidencePackage(plan, _public_key_pem(self._vk))
+        self._package = EvidencePackage(plan)
         return plan
 
     def notarise(
@@ -522,9 +560,17 @@ class Notary:
     ) -> NotarisedReceipt:
         """Observe an action and produce signed evidence.
 
-        Each receipt includes the SHA-256 hash of the previous receipt's
-        signed payload, forming a tamper-evident chain. Deleting or
-        reordering any receipt breaks the chain.
+        Never blocks. Never modifies. Only records and evaluates.
+
+        Args:
+            action: Specific action taken (e.g. "tts:standard:JBFq").
+            agent: Agent that performed the action.
+            plan: Plan receipt to evaluate against.
+            evidence: Observable facts from the API response.
+            enable_timestamp: Request RFC 3161 timestamp (requires network).
+
+        Returns:
+            Signed, optionally timestamped NotarisedReceipt.
         """
         action = _require_non_empty_string(action, "action", MAX_ACTION_LEN)
         agent = _require_non_empty_string(agent, "agent", MAX_IDENTITY_LEN)
@@ -557,12 +603,6 @@ class Notary:
             "observed_at": observed_at,
             "aiuc_controls": list(AIUC_CONTROLS),
         }
-
-        # Chain linking: include hash of previous receipt if it exists
-        prev_hash = self._last_receipt_hash
-        if prev_hash is not None:
-            signable["previous_receipt_hash"] = prev_hash
-
         signature = _sign(self._key, signable)
 
         ts_result = None
@@ -588,13 +628,8 @@ class Notary:
             evidence=evidence,
             observed_at=observed_at,
             signature=signature,
-            previous_receipt_hash=prev_hash,
             timestamp_result=ts_result,
         )
-
-        # Update chain: hash this receipt's signed payload for next receipt
-        signed_payload_bytes = _canonical_json({**signable, "signature": signature})
-        self._last_receipt_hash = hashlib.sha256(signed_payload_bytes).hexdigest()
 
         if self._package and self._package.plan.id == plan.id:
             self._package.add(receipt)
@@ -602,9 +637,11 @@ class Notary:
         return receipt
 
     def verify_receipt(self, receipt: NotarisedReceipt) -> bool:
+        """Verify the Ed25519 signature on a receipt."""
         return _verify_signature(self._vk, receipt.signable_dict(), receipt.signature)
 
     def verify_plan(self, plan: PlanReceipt) -> bool:
+        """Verify the Ed25519 signature on a plan."""
         return _verify_signature(self._vk, plan.signable_dict(), plan.signature)
 
     def export_evidence(
@@ -612,26 +649,37 @@ class Notary:
         output_dir: Path,
         certs_dir: Optional[Path] = None,
     ) -> Path:
+        """Export all collected receipts as a portable evidence zip.
+
+        Args:
+            output_dir: Where to write the zip file.
+            certs_dir: Where to cache FreeTSA certs.
+
+        Returns:
+            Path to the zip file.
+        """
         if not self._package:
             raise NotaryError("no plan created — call create_plan() first")
         return self._package.export(output_dir, certs_dir)
 
 
-# ── VERIFY.sh (timestamps only — pure OpenSSL, zero dependencies) ──
+# ── VERIFY.sh ──────────────────────────────────────────────
 
 def _build_verify_script(receipts: list[NotarisedReceipt]) -> str:
-    """Generate VERIFY.sh — checks RFC 3161 timestamps with OpenSSL.
-
-    For Ed25519 signature verification, see verify_sigs.py in the same package.
-    """
+    """Generate a self-contained bash verification script."""
     lines = [
         "#!/bin/bash",
-        "# AgentMint Evidence Verification — RFC 3161 Timestamps",
-        "# Requires: openssl",
-        "# For Ed25519 signatures: python3 verify_sigs.py",
+        "#",
+        "# AgentMint Evidence Verification",
+        "#",
+        "# Independently verifies all receipts in this evidence package.",
+        "# Requires: openssl (any recent version)",
+        "# Does NOT require AgentMint software.",
+        "#",
         "",
         'set -euo pipefail',
-        'cd "$(dirname "$0")"',
+        'SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"',
+        'cd "$SCRIPT_DIR"',
         "",
         "VERIFIED=0",
         "FAILED=0",
@@ -662,7 +710,7 @@ def _build_verify_script(receipts: list[NotarisedReceipt]) -> str:
             lines.append(f'    -CAfile "freetsa_cacert.pem" \\')
             lines.append(f'    -untrusted "freetsa_tsa.crt" \\')
             lines.append(f'    > /dev/null 2>&1; then')
-            lines.append(f'  echo "  Timestamp: ✓ verified"')
+            lines.append(f'  echo "  Timestamp: ✓ Verified"')
             lines.append(f'  VERIFIED=$((VERIFIED + 1))')
             lines.append(f'else')
             lines.append(f'  echo "  Timestamp: ✗ FAILED"')
@@ -673,76 +721,27 @@ def _build_verify_script(receipts: list[NotarisedReceipt]) -> str:
 
         lines.append("TOTAL=$((TOTAL + 1))")
         lines.append('echo ""')
+        lines.append("")
 
     lines.extend([
         'echo "════════════════════════════════════════"',
-        'echo "  Timestamps: $VERIFIED / $TOTAL verified"',
-        'echo "  Failures:   $FAILED"',
-        'echo "  Flagged:    $FLAGGED out-of-policy"',
-        'echo "  Signatures: run python3 verify_sigs.py"',
+        'echo "  AgentMint Evidence Package"',
+        'echo "  Receipts verified: $VERIFIED / $TOTAL"',
+        'echo "  Verification failures: $FAILED"',
+        'echo "  Out-of-policy actions flagged: $FLAGGED"',
+        'echo "  Verification timestamp: $(date -u)"',
         'echo "════════════════════════════════════════"',
         "",
-        '[ "$FAILED" -gt 0 ] && exit 1',
-        'exit 0',
+        'if [ "$FAILED" -gt 0 ]; then',
+        '  exit 1',
+        'fi',
     ])
 
     return "\n".join(lines) + "\n"
 
 
-# ── verify_sigs.py (Ed25519 signatures — needs pynacl) ────
-
-_VERIFY_SIGS_PY = '''\
-#!/usr/bin/env python3
-"""Verify Ed25519 signatures on all receipts. Requires: pip install pynacl"""
-import json, sys, base64
-from pathlib import Path
-
-try:
-    from nacl.signing import VerifyKey
-    from nacl.exceptions import BadSignatureError
-except ImportError:
-    print("Install pynacl: pip install pynacl")
-    sys.exit(1)
-
-def canonical(d):
-    return json.dumps(d, sort_keys=True, separators=(",", ":")).encode()
-
-def load_pem_public_key(path):
-    lines = path.read_text().strip().split("\\n")
-    b64 = "".join(lines[1:-1])
-    der = base64.b64decode(b64)
-    # SPKI prefix is 12 bytes, Ed25519 key is last 32
-    return VerifyKey(der[12:])
-
-here = Path(__file__).parent
-pk_path = here / "public_key.pem"
-if not pk_path.exists():
-    print("No public_key.pem found"); sys.exit(1)
-
-vk = load_pem_public_key(pk_path)
-ok = fail = 0
-
-for rfile in sorted((here / "receipts").glob("*.json")):
-    receipt = json.loads(rfile.read_text())
-    sig = bytes.fromhex(receipt["signature"])
-    # Reconstruct signable dict (everything except signature and timestamp)
-    signable = {k: v for k, v in receipt.items() if k not in ("signature", "timestamp")}
-    try:
-        vk.verify(canonical(signable), sig)
-        status = "✓"
-        ok += 1
-    except BadSignatureError:
-        status = "✗ FAILED"
-        fail += 1
-    tag = "in policy" if receipt.get("in_policy") else "VIOLATION"
-    print(f"  {status}  {receipt['id'][:8]}  {receipt['action']}  ({tag})")
-
-print(f"\\nSignatures: {ok} verified, {fail} failed")
-sys.exit(1 if fail else 0)
-'''
-
-
 # ── Utilities ──────────────────────────────────────────────
 
 def _utc_now() -> datetime:
+    """Current UTC time. Isolated for testability."""
     return datetime.now(timezone.utc)

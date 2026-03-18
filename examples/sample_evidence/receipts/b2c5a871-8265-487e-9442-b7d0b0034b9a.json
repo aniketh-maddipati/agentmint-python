@@ -1,0 +1,55 @@
+{
+  "id": "b2c5a871-8265-487e-9442-b7d0b0034b9a",
+  "type": "notarised_evidence",
+  "plan_id": "3805bfc6-0acc-4f6a-b795-0b18fa2c87e1",
+  "agent": "demo-agent",
+  "action": "delete:reports:quarterly",
+  "in_policy": false,
+  "policy_reason": "matched checkpoint delete:*",
+  "evidence_hash_sha512": "a7a7c15ecf04a04d5d5d781578c56153e69299ef148d2aa8e9ef980f146382e85160c310006f553d21cb304f74a70f80ad0ef31885d1e02b72d0d88e2ee283f2",
+  "evidence": {
+    "request": {
+      "method": "DELETE",
+      "resource": "/api/reports/quarterly",
+      "intent": "delete quarterly report"
+    },
+    "response": {
+      "outcome": "blocked",
+      "reason": "checkpoint_requires_human_approval"
+    },
+    "delegation": {
+      "delegated_by": "security-team@example.com",
+      "delegation_depth": 1,
+      "checkpoint_pattern_matched": "delete:*",
+      "scope_verdict": "checkpoint",
+      "escalation_required": true
+    },
+    "compliance": {
+      "controls_exercised": {
+        "AIUC-1:E015": "agent action logged with signature and timestamp",
+        "AIUC-1:D003": "unauthorized tool call blocked before execution",
+        "AIUC-1:E010": "acceptable use policy enforced \u2014 checkpoint violation",
+        "AIUC-1:B001": "adversarial robustness \u2014 scope boundary tested"
+      },
+      "eu_ai_act": "Article 12(2)(a) \u2014 risk situation identified and recorded",
+      "iso_42001": "Clause 8 \u2014 AI risk treatment evidence"
+    },
+    "content_commitment": {
+      "hash_algorithm": "SHA-512",
+      "content_excluded": true,
+      "verification": "hash original data with SHA-512, compare to evidence_hash_sha512"
+    }
+  },
+  "observed_at": "2026-03-18T18:20:16.842817+00:00",
+  "aiuc_controls": [
+    "E015",
+    "D003",
+    "B001"
+  ],
+  "previous_receipt_hash": "a8895492a42a8fabf0aa1e31e41bdf6ab8828a31948ecf861d030cb9bbed66c3",
+  "signature": "6fc62c5c9d7bf6a6e0e045a026875c732d0a8ef844e2526d052527380f8d0e4012968d3aa730a60dff1af92af34f8911ee079ae67136a93ee4c5077623661708",
+  "timestamp": {
+    "tsa_url": "https://freetsa.org/tsr",
+    "digest_hex": "cf38f09f2ae32628b096a09432a65d710ffaeecc2e2fdd645c11288517647d6185d5eaa9b6b71142e78745bbec87dd0693b9544a1f073709c616ab25469d9c22"
+  }
+}

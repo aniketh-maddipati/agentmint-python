@@ -365,9 +365,6 @@ class TestEvidencePackage:
         notary.notarise(action="test", agent="a", plan=plan, evidence={}, enable_timestamp=False)
         zip_path = notary.export_evidence(tmp_path)
         with zipfile.ZipFile(zip_path) as zf:
-            names = zf.namelist()
-            # VERIFY.sh handles timestamps, verify_sigs.py handles Ed25519
-            assert "verify_sigs.py" in names
-            sigs_script = zf.read("verify_sigs.py").decode()
-            assert "VerifyKey" in sigs_script
-            assert "BadSignatureError" in sigs_script
+            script = zf.read("VERIFY.sh").decode()
+            assert "pkeyutl" in script
+            assert "public_key.pem" in script
