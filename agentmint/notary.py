@@ -213,8 +213,6 @@ class PlanReceipt:
     expires_at: str
     signature: str
     key_id: str = ""
-    agent_signature: str = ""
-    agent_key_id: str = ""
 
     @property
     def short_id(self) -> str:
@@ -236,7 +234,6 @@ class PlanReceipt:
             "issued_at": self.issued_at,
             "expires_at": self.expires_at,
             "key_id": self.key_id,
-            "agent_key_id": self.agent_key_id,
         }
 
     def to_dict(self) -> dict[str, Any]:
