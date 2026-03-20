@@ -53,6 +53,7 @@ class KeyStore:
             self._vk = self._sk.verify_key
         else:
             self._sk = SigningKey.generate()
+            self._vk = self._sk.verify_key
             self._dir.mkdir(parents=True, exist_ok=True)
             # Write private key — owner-only permissions
             sk_path.write_bytes(bytes(self._sk))

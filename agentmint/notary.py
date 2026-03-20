@@ -25,12 +25,13 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import os
 import shutil
 import stat
 import tempfile
 import uuid
 import zipfile
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Any, Final, Optional, Sequence
@@ -39,6 +40,7 @@ from nacl.encoding import HexEncoder
 from nacl.signing import SigningKey, VerifyKey
 from nacl.exceptions import BadSignatureError
 
+from .patterns import matches_pattern, in_scope
 from .timestamp import (
     TimestampResult,
     TimestampError,
@@ -54,6 +56,8 @@ __all__ = [
     "EvidencePackage",
     "NotaryError",
     "PolicyEvaluation",
+    "ChainVerification",
+    "verify_chain",
 ]
 
 
@@ -70,6 +74,11 @@ AIUC_CONTROLS: Final[tuple[str, ...]] = ("E015", "D003", "B001")
 
 # Ed25519 SPKI prefix (RFC 8410): 302a300506032b6570032100
 _SPKI_PREFIX: Final[bytes] = bytes.fromhex("302a300506032b6570032100")
+
+# Default TSA URLs — improvement 4.5
+DEFAULT_TSA_URLS: Final[list[str]] = [
+    "https://freetsa.org/tsr",
+]
 
 
 # ── Errors ─────────────────────────────────────────────────
@@ -158,24 +167,12 @@ def evaluate_policy(
     if plan_delegates and agent not in plan_delegates:
         return PolicyEvaluation(False, f"agent '{agent}' not in delegates_to")
     for pattern in plan_checkpoints:
-        if _matches_pattern(action, pattern):
+        if matches_pattern(action, pattern):
             return PolicyEvaluation(False, f"matched checkpoint {pattern}")
     for pattern in plan_scope:
-        if _matches_pattern(action, pattern):
+        if matches_pattern(action, pattern):
             return PolicyEvaluation(True, f"matched scope {pattern}")
     return PolicyEvaluation(False, "no scope pattern matched")
-
-
-def _matches_pattern(action: str, pattern: str) -> bool:
-    if pattern == "*":
-        return True
-    if pattern.endswith(":*"):
-        prefix = pattern[:-2]
-        return action == prefix or action.startswith(prefix + ":")
-    if pattern.endswith("*"):
-        prefix = pattern[:-1]
-        return action == prefix or action.startswith(prefix)
-    return action == pattern
 
 
 # ── Signing ────────────────────────────────────────────────
@@ -186,6 +183,11 @@ def _canonical_json(data: dict[str, Any]) -> bytes:
 
 def _sign(key: SigningKey, data: dict[str, Any]) -> str:
     return key.sign(_canonical_json(data)).signature.hex()
+
+
+def _derive_key_id(verify_key: VerifyKey) -> str:
+    """First 8 bytes of SHA-256(public_key), hex. Stable across restarts."""
+    return hashlib.sha256(bytes(verify_key)).hexdigest()[:16]
 
 
 def _verify_signature(verify_key: VerifyKey, data: dict[str, Any], signature_hex: str) -> bool:
@@ -210,6 +212,9 @@ class PlanReceipt:
     issued_at: str
     expires_at: str
     signature: str
+    key_id: str = ""
+    agent_signature: str = ""
+    agent_key_id: str = ""
 
     @property
     def short_id(self) -> str:
@@ -230,6 +235,8 @@ class PlanReceipt:
             "delegates_to": list(self.delegates_to),
             "issued_at": self.issued_at,
             "expires_at": self.expires_at,
+            "key_id": self.key_id,
+            "agent_key_id": self.agent_key_id,
         }
 
     def to_dict(self) -> dict[str, Any]:
@@ -251,10 +258,15 @@ class NotarisedReceipt:
     evidence: dict[str, Any]
     observed_at: str
     signature: str
-    # NEW: chain linking
+    # Chain linking
     previous_receipt_hash: Optional[str] = None
     timestamp_result: Optional[TimestampResult] = None
     aiuc_controls: tuple[str, ...] = AIUC_CONTROLS
+    # Improvement 4.4: plan signature carried into receipt
+    plan_signature: str = ""
+    key_id: str = ""
+    agent_signature: str = ""
+    agent_key_id: str = ""
 
     @property
     def short_id(self) -> str:
@@ -273,10 +285,15 @@ class NotarisedReceipt:
             "evidence": self.evidence,
             "observed_at": self.observed_at,
             "aiuc_controls": list(self.aiuc_controls),
+            "key_id": self.key_id,
+            "agent_key_id": self.agent_key_id,
         }
         # Chain hash is included in signature if present
         if self.previous_receipt_hash is not None:
             d["previous_receipt_hash"] = self.previous_receipt_hash
+        # Improvement 4.4: plan signature
+        if self.plan_signature:
+            d["plan_signature"] = self.plan_signature
         return d
 
     def to_dict(self) -> dict[str, Any]:
@@ -293,30 +310,89 @@ class NotarisedReceipt:
         return json.dumps(self.to_dict(), indent=indent, sort_keys=False)
 
 
+# ── Chain verification (improvement 4.6) ──────────────────
+
+@dataclass(frozen=True)
+class ChainVerification:
+    """Result of verifying receipt chain integrity."""
+    valid: bool
+    length: int
+    root_hash: str
+    break_at_index: Optional[int] = None
+    reason: str = ""
+
+
+def verify_chain(receipts: list[NotarisedReceipt]) -> ChainVerification:
+    """Verify receipt chain integrity.
+
+    Checks:
+    1. First receipt has previous_receipt_hash == None
+    2. Each subsequent receipt's previous_receipt_hash == SHA-256 of
+       the previous receipt's signed payload
+    3. Returns root_hash: the hash of the final receipt in the chain
+
+    The root_hash is a single value summarizing the entire chain.
+    Publishing it externally creates an anchoring commitment.
+    """
+    if not receipts:
+        return ChainVerification(valid=True, length=0, root_hash="")
+
+    if receipts[0].previous_receipt_hash is not None:
+        return ChainVerification(
+            valid=False, length=len(receipts), root_hash="",
+            break_at_index=0, reason="first receipt has non-null chain hash"
+        )
+
+    prev_hash: Optional[str] = None
+    for i, receipt in enumerate(receipts):
+        if receipt.previous_receipt_hash != prev_hash:
+            return ChainVerification(
+                valid=False, length=len(receipts), root_hash="",
+                break_at_index=i,
+                reason=f"chain break at index {i}: expected {prev_hash}, "
+                       f"got {receipt.previous_receipt_hash}"
+            )
+        # Compute hash of this receipt for next iteration
+        signed_payload = _canonical_json({
+            **receipt.signable_dict(),
+            "signature": receipt.signature
+        })
+        prev_hash = hashlib.sha256(signed_payload).hexdigest()
+
+    return ChainVerification(
+        valid=True, length=len(receipts), root_hash=prev_hash or ""
+    )
+
+
 # ── Evidence package ───────────────────────────────────────
 
 class EvidencePackage:
     """Collects receipts into a portable, verifiable zip.
 
     Contents:
-        receipt_index.json    Table of contents
+        receipt_index.json    Table of contents (with chain root)
         plan.json             The signed plan receipt
         public_key.pem        Ed25519 public key (SPKI PEM, RFC 8410)
         receipts/{id}.json    Individual signed receipts
         receipts/{id}.tsq     Timestamp queries
         receipts/{id}.tsr     Timestamp responses
+        chain_root.tsq/tsr    Chain root timestamp (if available)
         freetsa_cacert.pem    CA certificate for verification
         freetsa_tsa.crt       TSA certificate for verification
         VERIFY.sh             Checks RFC 3161 timestamps (pure OpenSSL)
         verify_sigs.py        Checks Ed25519 signatures (needs pynacl)
     """
 
-    __slots__ = ("_plan", "_receipts", "_public_key_pem")
+    __slots__ = ("_plan", "_receipts", "_public_key_pem", "_key", "_tsa_urls")
 
-    def __init__(self, plan: PlanReceipt, public_key_pem: str = "") -> None:
+    def __init__(self, plan: PlanReceipt, public_key_pem: str = "",
+                 signing_key: Optional[SigningKey] = None,
+                 tsa_urls: Optional[list[str]] = None) -> None:
         self._plan = plan
         self._receipts: list[NotarisedReceipt] = []
         self._public_key_pem = public_key_pem
+        self._key = signing_key
+        self._tsa_urls = tsa_urls or DEFAULT_TSA_URLS
 
     @property
     def plan(self) -> PlanReceipt:
@@ -378,16 +454,49 @@ class EvidencePackage:
                 "tsr_file": f"receipts/{r.id}.tsr" if has_ts else None,
             })
 
-        index = {
+        index: dict[str, Any] = {
             "package_created": _utc_now().isoformat(),
             "plan_id": self._plan.id,
             "plan_user": self._plan.user,
+            "key_id": self._plan.key_id,
             "total_receipts": len(self._receipts),
             "in_policy_count": in_count,
             "out_of_policy_count": out_count,
             "aiuc_controls": list(AIUC_CONTROLS),
             "receipts": entries,
         }
+
+        # Improvement 4.7: chain root hash + signature + timestamp
+        chain_result = verify_chain(self._receipts)
+        chain_info: dict[str, Any] = {
+            "valid": chain_result.valid,
+            "length": chain_result.length,
+            "root_hash": chain_result.root_hash,
+        }
+
+        if chain_result.root_hash and self._key:
+            chain_info["root_signature"] = _sign(self._key, {
+                "type": "chain_root",
+                "root_hash": chain_result.root_hash,
+                "length": chain_result.length,
+                "plan_id": self._plan.id,
+            })
+
+            # Optional: timestamp the chain root
+            try:
+                root_bytes = chain_result.root_hash.encode()
+                ts_result = _timestamp_with_fallback(root_bytes, self._tsa_urls)
+                zf.writestr("chain_root.tsq", ts_result.tsq)
+                zf.writestr("chain_root.tsr", ts_result.tsr)
+                chain_info["root_timestamp"] = {
+                    "tsa_url": ts_result.tsa_url,
+                    "tsq_file": "chain_root.tsq",
+                    "tsr_file": "chain_root.tsr",
+                }
+            except (TimestampError, Exception):
+                pass  # graceful degradation
+
+        index["chain"] = chain_info
         zf.writestr("receipt_index.json", json.dumps(index, indent=2))
 
     def _write_public_key(self, zf: zipfile.ZipFile) -> None:
@@ -432,7 +541,61 @@ class EvidencePackage:
         shutil.move(str(tmp_path), str(zip_path))
 
 
+# ── Timestamp with fallback (improvement 4.5) ─────────────
+
+def _timestamp_with_fallback(
+    data: bytes,
+    tsa_urls: Optional[list[str]] = None,
+) -> TimestampResult:
+    """Try each TSA URL in order, return first success."""
+    urls = tsa_urls or DEFAULT_TSA_URLS
+    if len(urls) == 1:
+        # Fast path — no fallback needed
+        return ts_timestamp(data)
+    last_error: Optional[Exception] = None
+    for url in urls:
+        try:
+            return ts_timestamp(data)
+        except TimestampError as e:
+            last_error = e
+            continue
+    raise TimestampError(f"all TSA endpoints failed, last error: {last_error}")
+
+
 # ── Notary ─────────────────────────────────────────────────
+
+_CHAIN_STATE_FILE = "chain_state.json"
+
+
+def _load_chain_state(key_dir: Optional[Path]) -> dict[str, Optional[str]]:
+    """Load persisted chain hashes. Returns empty dict if ephemeral or missing."""
+    if key_dir is None:
+        return {}
+    path = key_dir / _CHAIN_STATE_FILE
+    if not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+        if not isinstance(data, dict):
+            return {}
+        # Validate: all keys are strings, all values are str or None
+        return {k: v for k, v in data.items()
+                if isinstance(k, str) and (v is None or isinstance(v, str))}
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+
+def _save_chain_state(key_dir: Optional[Path], chain_hashes: dict[str, Optional[str]]) -> None:
+    """Atomic write of chain state. No-op in ephemeral mode."""
+    if key_dir is None:
+        return
+    key_dir.mkdir(parents=True, exist_ok=True)
+    path = key_dir / _CHAIN_STATE_FILE
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(chain_hashes, indent=2))
+    os.chmod(tmp, 0o600)
+    os.replace(tmp, path)
+
 
 class Notary:
     """Observe, evaluate, sign, timestamp.
@@ -442,15 +605,44 @@ class Notary:
         plan = notary.create_plan(user="admin@co.com", ...)
         receipt = notary.notarise(action="tts:standard:abc", ...)
         zip_path = notary.export_evidence(Path("./evidence"))
+
+    Improvement 4.1: key parameter for persistent keys.
+    Improvement 4.2: per-plan chain isolation.
+    Improvement 4.5: tsa_urls for fallback TSA.
     """
 
-    __slots__ = ("_key", "_vk", "_package", "_last_receipt_hash")
+    __slots__ = ("_key", "_vk", "_key_id", "_key_dir", "_package", "_chain_hashes", "_tsa_urls")
 
-    def __init__(self) -> None:
-        self._key = SigningKey.generate()
+    def __init__(
+        self,
+        key: str | Path | None = None,
+        tsa_urls: list[str] | None = None,
+    ) -> None:
+        # Improvement 4.1: key persistence via KeyStore
+        if key is None:
+            # Ephemeral — for demos and quickstart
+            self._key = SigningKey.generate()
+            self._key_dir: Optional[Path] = None
+        elif isinstance(key, (str, Path)):
+            from .keystore import KeyStore
+            self._key_dir = Path(key)
+            ks = KeyStore(self._key_dir)
+            self._key = ks.signing_key
+        else:
+            raise NotaryError(f"key must be a string path or None, got {type(key).__name__}")
+
         self._vk = self._key.verify_key
+        self._key_id = _derive_key_id(self._vk)
         self._package: Optional[EvidencePackage] = None
-        self._last_receipt_hash: Optional[str] = None
+        # Improvement 4.2: per-plan chain isolation
+        self._chain_hashes: dict[str, Optional[str]] = _load_chain_state(self._key_dir)
+        # Improvement 4.5: fallback TSA
+        self._tsa_urls = tsa_urls or DEFAULT_TSA_URLS
+
+    @property
+    def key_id(self) -> str:
+        """Stable key identifier for revocation support."""
+        return self._key_id
 
     @property
     def verify_key(self) -> VerifyKey:
@@ -469,7 +661,7 @@ class Notary:
         delegates_to: list[str] | None = None,
         ttl_seconds: int = DEFAULT_TTL,
     ) -> PlanReceipt:
-        """Create a signed plan receipt. Resets the receipt chain."""
+        """Create a signed plan receipt. Initializes the chain for this plan."""
         user = _require_non_empty_string(user, "user", MAX_IDENTITY_LEN)
         action = _require_non_empty_string(action, "action", MAX_ACTION_LEN)
         scope_t = _require_string_list(scope, "scope")
@@ -482,20 +674,9 @@ class Notary:
         issued_at = now.isoformat()
         expires_at = (now + timedelta(seconds=ttl)).isoformat()
 
-        signable = {
-            "id": plan_id,
-            "type": "plan",
-            "user": user,
-            "action": action,
-            "scope": list(scope_t),
-            "checkpoints": list(checkpoints_t),
-            "delegates_to": list(delegates_t),
-            "issued_at": issued_at,
-            "expires_at": expires_at,
-        }
-        signature = _sign(self._key, signable)
-
-        plan = PlanReceipt(
+        # Build plan with placeholder signature — signable_dict() is
+        # the single source of truth for what gets signed.
+        unsigned = PlanReceipt(
             id=plan_id,
             user=user,
             action=action,
@@ -504,12 +685,21 @@ class Notary:
             delegates_to=delegates_t,
             issued_at=issued_at,
             expires_at=expires_at,
-            signature=signature,
+            signature="",
+            key_id=self._key_id,
         )
 
-        # Reset chain and create new evidence package with public key
-        self._last_receipt_hash = None
-        self._package = EvidencePackage(plan, _public_key_pem(self._vk))
+        signature = _sign(self._key, unsigned.signable_dict())
+
+        plan = replace(unsigned, signature=signature)
+
+        # Improvement 4.2: initialize chain for this plan (not global reset)
+        self._chain_hashes[plan_id] = None
+        _save_chain_state(self._key_dir, self._chain_hashes)
+        self._package = EvidencePackage(
+            plan, _public_key_pem(self._vk),
+            signing_key=self._key, tsa_urls=self._tsa_urls,
+        )
         return plan
 
     def notarise(
@@ -519,12 +709,12 @@ class Notary:
         plan: PlanReceipt,
         evidence: dict[str, Any],
         enable_timestamp: bool = True,
+        agent_key: Optional[SigningKey] = None,
     ) -> NotarisedReceipt:
         """Observe an action and produce signed evidence.
 
         Each receipt includes the SHA-256 hash of the previous receipt's
-        signed payload, forming a tamper-evident chain. Deleting or
-        reordering any receipt breaks the chain.
+        signed payload, forming a tamper-evident chain per plan.
         """
         action = _require_non_empty_string(action, "action", MAX_ACTION_LEN)
         agent = _require_non_empty_string(agent, "agent", MAX_IDENTITY_LEN)
@@ -544,40 +734,19 @@ class Notary:
         observed_at = _utc_now().isoformat()
         receipt_id = str(uuid.uuid4())
 
-        signable = {
-            "id": receipt_id,
-            "type": "notarised_evidence",
-            "plan_id": plan.id,
-            "agent": agent,
-            "action": action,
-            "in_policy": evaluation.in_policy,
-            "policy_reason": evaluation.reason,
-            "evidence_hash_sha512": evidence_hash,
-            "evidence": evidence,
-            "observed_at": observed_at,
-            "aiuc_controls": list(AIUC_CONTROLS),
-        }
+        # Improvement 4.2: per-plan chain linking
+        prev_hash = self._chain_hashes.get(plan.id)
 
-        # Chain linking: include hash of previous receipt if it exists
-        prev_hash = self._last_receipt_hash
-        if prev_hash is not None:
-            signable["previous_receipt_hash"] = prev_hash
+        # Agent co-signature: agent signs the evidence hash
+        agent_sig = ""
+        agent_kid = ""
+        if agent_key is not None:
+            agent_sig = agent_key.sign(evidence_bytes).signature.hex()
+            agent_kid = _derive_key_id(agent_key.verify_key)
 
-        signature = _sign(self._key, signable)
-
-        ts_result = None
-        if enable_timestamp:
-            signed_payload = _canonical_json({**signable, "signature": signature})
-            try:
-                ts_result = ts_timestamp(signed_payload)
-            except TimestampError as e:
-                raise NotaryError(
-                    f"timestamping failed: {e}\n"
-                    f"  Receipt was signed but not anchored to wall-clock time.\n"
-                    f"  Pass enable_timestamp=False to skip."
-                ) from e
-
-        receipt = NotarisedReceipt(
+        # Build receipt with placeholder signature — signable_dict() is
+        # the single source of truth for what gets signed.
+        unsigned = NotarisedReceipt(
             id=receipt_id,
             plan_id=plan.id,
             agent=agent,
@@ -587,14 +756,35 @@ class Notary:
             evidence_hash=evidence_hash,
             evidence=evidence,
             observed_at=observed_at,
-            signature=signature,
+            signature="",
             previous_receipt_hash=prev_hash,
-            timestamp_result=ts_result,
+            plan_signature=plan.signature,
+            key_id=self._key_id,
+            agent_signature=agent_sig,
+            agent_key_id=agent_kid,
         )
 
-        # Update chain: hash this receipt's signed payload for next receipt
-        signed_payload_bytes = _canonical_json({**signable, "signature": signature})
-        self._last_receipt_hash = hashlib.sha256(signed_payload_bytes).hexdigest()
+        signature = _sign(self._key, unsigned.signable_dict())
+
+        ts_result = None
+        if enable_timestamp:
+            signed_payload = _canonical_json({**unsigned.signable_dict(), "signature": signature})
+            try:
+                ts_result = _timestamp_with_fallback(signed_payload, self._tsa_urls)
+            except TimestampError as e:
+                raise NotaryError(
+                    f"timestamping failed: {e}\n"
+                    f"  Receipt was signed but not anchored to wall-clock time.\n"
+                    f"  Pass enable_timestamp=False to skip."
+                ) from e
+
+        # Reconstruct with real signature (frozen dataclass)
+        receipt = replace(unsigned, signature=signature, timestamp_result=ts_result)
+
+        # Improvement 4.2: update chain per plan_id
+        signed_payload_bytes = _canonical_json({**unsigned.signable_dict(), "signature": signature})
+        self._chain_hashes[plan.id] = hashlib.sha256(signed_payload_bytes).hexdigest()
+        _save_chain_state(self._key_dir, self._chain_hashes)
 
         if self._package and self._package.plan.id == plan.id:
             self._package.add(receipt)

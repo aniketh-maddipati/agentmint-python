@@ -11,6 +11,7 @@ from nacl.signing import SigningKey
 from nacl.exceptions import BadSignatureError
 
 from .errors import ValidationError
+from .patterns import matches_pattern, in_scope
 from .types import DelegationStatus, DelegationResult
 from . import console
 
@@ -42,17 +43,8 @@ def _clamp_ttl(ttl: int) -> int:
     return max(MIN_TTL, min(MAX_TTL, ttl))
 
 
-def _matches_pattern(action: str, pattern: str) -> bool:
-    if pattern == "*":
-        return True
-    if pattern.endswith(":*"):
-        prefix = pattern[:-2]
-        return action == prefix or action.startswith(f"{prefix}:")
-    return action == pattern
-
-
-def _in_scope(action: str, scope: list[str]) -> bool:
-    return any(_matches_pattern(action, p) for p in scope)
+# Pattern matching now uses unified patterns.py
+# _matches_pattern and _in_scope imported from .patterns
 
 
 def _utc_now() -> datetime:
@@ -241,7 +233,7 @@ class AgentMint:
             )
 
         # Check 3: Checkpoint required?
-        if parent.requires_checkpoint and _in_scope(action, parent.requires_checkpoint):
+        if parent.requires_checkpoint and in_scope(action, parent.requires_checkpoint):
             if not self._quiet:
                 console.checkpoint(agent, action)
             return DelegationResult(
@@ -250,7 +242,7 @@ class AgentMint:
             )
 
         # Check 4: In scope?
-        if parent.scope and not _in_scope(action, parent.scope):
+        if parent.scope and not in_scope(action, parent.scope):
             if not self._quiet:
                 console.delegate_deny(agent, action, "action_not_in_scope")
             return DelegationResult(

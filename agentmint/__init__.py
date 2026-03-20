@@ -1,7 +1,19 @@
 """
-AgentMint: Cryptographic proof that a human approved an AI agent action.
+AgentMint — Independent notary for AI agent actions.
 
-Example:
+Produces cryptographic receipts proving what an agent was authorized
+to do, and that the record was not altered after the fact.
+
+Quickstart (Notary — primary interface):
+    from agentmint.notary import Notary
+
+    notary = Notary()
+    plan = notary.create_plan(user="admin@co.com", action="ops", scope=["tts:*"])
+    receipt = notary.notarise(action="tts:standard:abc", agent="voice-agent",
+                              plan=plan, evidence={"voice_id": "abc"})
+    notary.export_evidence(Path("./evidence"))
+
+Scope layer (lightweight authorization checks):
     from agentmint import AgentMint
 
     mint = AgentMint()

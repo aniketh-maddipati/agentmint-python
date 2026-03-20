@@ -1,6 +1,6 @@
 {
-  "package_created": "2026-03-18T18:20:18.133397+00:00",
-  "plan_id": "3805bfc6-0acc-4f6a-b795-0b18fa2c87e1",
+  "package_created": "2026-03-20T16:09:11.448999+00:00",
+  "plan_id": "5281f707-c288-498b-8e96-7e53292116e5",
   "plan_user": "security-team@example.com",
   "total_receipts": 4,
   "in_policy_count": 2,
@@ -12,48 +12,59 @@
   ],
   "receipts": [
     {
-      "receipt_id": "f45894e5-a562-4c59-977d-994c6b04acb2",
-      "short_id": "f45894e5",
+      "receipt_id": "24aa2837-cef3-4a4c-b16f-ad1545becf26",
+      "short_id": "24aa2837",
       "action": "read:reports:quarterly",
       "agent": "demo-agent",
       "in_policy": true,
       "policy_reason": "matched scope read:reports:*",
-      "observed_at": "2026-03-18T18:20:16.159727+00:00",
+      "observed_at": "2026-03-20T16:09:09.444164+00:00",
       "previous_receipt_hash": null,
-      "tsr_file": "receipts/f45894e5-a562-4c59-977d-994c6b04acb2.tsr"
+      "tsr_file": "receipts/24aa2837-cef3-4a4c-b16f-ad1545becf26.tsr"
     },
     {
-      "receipt_id": "c9fda809-61a9-4ba7-af57-89b1faf119b9",
-      "short_id": "c9fda809",
+      "receipt_id": "e93c0bec-fb43-4a8d-9790-f950815baab0",
+      "short_id": "e93c0bec",
       "action": "read:reports:summary",
       "agent": "demo-agent",
       "in_policy": true,
       "policy_reason": "matched scope read:reports:*",
-      "observed_at": "2026-03-18T18:20:16.488537+00:00",
-      "previous_receipt_hash": "0d936a21b806a581d6c89892d1f0b7d40c836b2d9775d0682a1daeb43332c903",
-      "tsr_file": "receipts/c9fda809-61a9-4ba7-af57-89b1faf119b9.tsr"
+      "observed_at": "2026-03-20T16:09:09.823448+00:00",
+      "previous_receipt_hash": "9fd0751d0f3c5987db50a0e19a9c2ec5986655b5215b63760b1c957da02d2aa4",
+      "tsr_file": "receipts/e93c0bec-fb43-4a8d-9790-f950815baab0.tsr"
     },
     {
-      "receipt_id": "b2c5a871-8265-487e-9442-b7d0b0034b9a",
-      "short_id": "b2c5a871",
+      "receipt_id": "c7ea0e82-df2c-477f-b4d8-9712c6a2ad44",
+      "short_id": "c7ea0e82",
       "action": "delete:reports:quarterly",
       "agent": "demo-agent",
       "in_policy": false,
       "policy_reason": "matched checkpoint delete:*",
-      "observed_at": "2026-03-18T18:20:16.842817+00:00",
-      "previous_receipt_hash": "a8895492a42a8fabf0aa1e31e41bdf6ab8828a31948ecf861d030cb9bbed66c3",
-      "tsr_file": "receipts/b2c5a871-8265-487e-9442-b7d0b0034b9a.tsr"
+      "observed_at": "2026-03-20T16:09:10.191176+00:00",
+      "previous_receipt_hash": "75cd4fda46a0e6395d15b44a877243e57ad0216109b6d377f6d5c698e96bee55",
+      "tsr_file": "receipts/c7ea0e82-df2c-477f-b4d8-9712c6a2ad44.tsr"
     },
     {
-      "receipt_id": "4cc2202f-6912-4140-8a3a-c20e06f88dd3",
-      "short_id": "4cc2202f",
+      "receipt_id": "b5dd9e47-374f-4ab1-b7dd-3de5e13dfaed",
+      "short_id": "b5dd9e47",
       "action": "read:secrets:credentials",
       "agent": "demo-agent",
       "in_policy": false,
       "policy_reason": "no scope pattern matched",
-      "observed_at": "2026-03-18T18:20:17.172223+00:00",
-      "previous_receipt_hash": "5d47f823830edd3087d9a35634d36927d9348f8e1227404eaea1a913d14c5d57",
-      "tsr_file": "receipts/4cc2202f-6912-4140-8a3a-c20e06f88dd3.tsr"
+      "observed_at": "2026-03-20T16:09:10.529517+00:00",
+      "previous_receipt_hash": "b034223de5d28cf14846cf16c7633c09b4e8b319cb5e1ca802dd57555f1e6c8a",
+      "tsr_file": "receipts/b5dd9e47-374f-4ab1-b7dd-3de5e13dfaed.tsr"
     }
-  ]
+  ],
+  "chain": {
+    "valid": true,
+    "length": 4,
+    "root_hash": "b8aa204eef50bae8094d25547e90bf46d6aaa3d6ae0706284d6d18b496beefbb",
+    "root_signature": "c2c95e44a8b99eef62c865121fadaf82cbd7c7a81eb096f0c58c6e20d5a9ffe227e10b2071a3a521022444b5c6807324c4661cfb99dfe0c9324d7862f73bbc0b",
+    "root_timestamp": {
+      "tsa_url": "https://freetsa.org/tsr",
+      "tsq_file": "chain_root.tsq",
+      "tsr_file": "chain_root.tsr"
+    }
+  }
 }
