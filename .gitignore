@@ -24,3 +24,18 @@ evidence_output/
 # GitHub workflows (not ready)
 .github/
 .env
+
+# Evidence output
+evidence_output/
+quickstart_evidence/
+
+# Backups
+.backup_*/
+
+# Demo recordings
+*.cast
+*.gif
+
+# Keys
+.agentmint/
+chain_state.json
