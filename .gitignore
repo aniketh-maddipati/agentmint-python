@@ -1,41 +1,39 @@
+# Python
 __pycache__/
 *.py[cod]
 *.egg-info/
 dist/
 build/
-.eggs/
-venv/
+*.egg
 .venv/
-*.so
-.pytest_cache/
-.coverage
-htmlcov/
+venv/
 
-# Local artifacts
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
 .DS_Store
-*.mp4
-*.cast
-fly.toml
-.dockerignore
+Thumbs.db
 
-# Evidence output
-evidence_output/
-
-# GitHub workflows (not ready)
-.github/
-.env
-
-# Evidence output
+# AgentMint
+.agentmint/
+chain_state.json
 evidence_output/
 quickstart_evidence/
 
-# Backups
-.backup_*/
+# Secrets
+.env
+.env.*
 
 # Demo recordings
 *.cast
 *.gif
+*.mp4
 
-# Keys
-.agentmint/
-chain_state.json
+# Backups
+.backup_*/
+
+# pytest
+.pytest_cache/
