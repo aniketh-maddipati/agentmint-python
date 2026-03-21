@@ -1,6 +1,6 @@
 # AgentMint
 
-Unlock agent autonomy.Independent Notary for AI agent actions.
+Unlock agent autonomy. Runtime Enforcement for AI agent actions.
 
 Your agent takes an action. AgentMint produces a signed, timestamped, chained crypto receipt proving what was authorized, what happened, and whether the two match — verifiable with OpenSSL alone. No vendor software. No trust required.
 
