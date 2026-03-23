@@ -137,7 +137,7 @@ Circuit Breaker → Shield → Scope Check → Checkpoint Gate → Notary → Si
 uv run pytest tests/ -v   # 184 passed in 12s
 ```
 
-## What it can't do
+## What it can't do (yet)
 
 [LIMITS.md](LIMITS.md) — 11 sections of what AgentMint doesn't cover. Regex won't catch novel semantic attacks. Agent identity is asserted not proven. No behavioral baselines yet. Single-threaded. I'd rather document the boundaries than pretend they don't exist.
 
