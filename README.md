@@ -38,8 +38,6 @@ result = mint.delegate(plan, "claude-sonnet-4-20250514", "read:secret:credential
 # A signed receipt proves the block happened.
 ```
 
-The agent never sees the secrets. The injection fails. You have cryptographic proof.
-
 ## Install
 
 ```
@@ -50,7 +48,7 @@ Two dependencies. No API keys. No network calls required. Works offline.
 
 ## What's inside
 
-**Shield** — 23 compiled regex patterns scan tool inputs and outputs for PII, secrets, prompt injection, encoding evasion, and structural attacks. Fuzzy matching catches typo variants. Entropy detection flags obfuscated payloads. Sub-millisecond, zero network calls. This is Layer 1 — it catches known patterns, not novel semantic attacks. See [LIMITS.md](LIMITS.md).
+**Shield** — 23 compiled regex patterns scan tool inputs and outputs for PII, secrets, prompt injection, encoding evasion, and structural attacks. Fuzzy matching catches typo variants. Entropy detection flags obfuscated payloads. Fast, zero network calls. This is Layer 1 — it catches known patterns, not novel semantic attacks. See [LIMITS.md](LIMITS.md).
 
 **Scoped delegation** — A human approves a plan with glob-style permissions. `read:reports:*` allows quarterly reports but blocks `read:secrets:*`. Child agents get the intersection of parent scope and what they request — never more authority than the parent has.
 
@@ -102,7 +100,7 @@ Receipt fields map to SOC 2 (CC6.1, CC7.2, CC8.1), NIST AI RMF, HIPAA §164.312,
 
 ## Status
 
-Active development. Solo founder. 184 tests passing. Looking for anyone building agents that need scoped permissions — file access, API calls, actions on behalf of users. [Open an issue](https://github.com/aniketh-maddipati/agentmint-python/issues) or reach out.
+Active development. 184 tests passing. Looking for anyone building agents that need scoped permissions — file access, API calls, actions on behalf of users. [Open an issue](https://github.com/aniketh-maddipati/agentmint-python/issues) or reach out.
 
 [linkedin.com/in/anikethmaddipati](https://linkedin.com/in/anikethmaddipati)
 
