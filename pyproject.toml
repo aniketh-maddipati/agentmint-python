@@ -1,7 +1,7 @@
 [project]
 name = "agentmint"
 version = "0.1.0"
-description = "Cryptographic receipts for AI agent actions"
+description = "Runtime enforcement library for AI agent tool calls"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
