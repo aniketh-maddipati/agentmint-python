@@ -7,14 +7,15 @@ name = "agentmint"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "anthropic" },
     { name = "pynacl" },
     { name = "requests" },
 ]
 
 [package.optional-dependencies]
-demos = [
+anthropic = [
     { name = "anthropic" },
+]
+demos = [
     { name = "elevenlabs" },
     { name = "python-dotenv" },
     { name = "rich" },
@@ -30,8 +31,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "anthropic", specifier = ">=0.85.0" },
-    { name = "anthropic", marker = "extra == 'demos'", specifier = ">=0.40.0" },
+    { name = "anthropic", marker = "extra == 'anthropic'", specifier = ">=0.85.0" },
     { name = "elevenlabs", marker = "extra == 'demos'", specifier = ">=2.38.0" },
     { name = "pynacl", specifier = ">=1.5.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
@@ -39,7 +39,7 @@ requires-dist = [
     { name = "requests", specifier = ">=2.28.0" },
     { name = "rich", marker = "extra == 'demos'", specifier = ">=14.3.3" },
 ]
-provides-extras = ["dev", "demos"]
+provides-extras = ["anthropic", "dev", "demos"]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest", specifier = ">=9.0.2" }]

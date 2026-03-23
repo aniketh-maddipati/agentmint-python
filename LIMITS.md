@@ -66,12 +66,19 @@ a paid TSA with an SLA (DigiCert, GlobalSign, Sectigo).
 
 ---
 
-## 6. No behavioral analysis
+## 6. Limited behavioral analysis
 
-AgentMint evaluates each action independently. It has no rate limiting, anomaly
-detection, or pattern recognition across actions. An agent that makes 10,000
-authorized actions in one second will produce 10,000 valid receipts.
+AgentMint now includes per-agent rate limiting (circuit breaker) and per-session
+action counting, but does not perform statistical anomaly detection or ML-based
+pattern recognition.
 
+**Mitigated:** `CircuitBreaker(max_calls=100, window_seconds=60)` enforces a
+sliding-window rate limit per agent with three states (closed, half-open, open).
+Session policy thresholds (`escalate_after`, `deny_after`) flag or block agents
+that exceed per-pattern action counts within a session.
+
+**Remaining limit:** Rate limits are count-based, not behavioral. True
+anomaly detection (statistical baselines, drift scoring) is future work.
 ---
 
 ## 7. No key revocation
@@ -105,14 +112,19 @@ consensus for multi-node deployments.
 
 ---
 
-## 9. No content inspection / DLP
+## 9. Deterministic content scanning, not full DLP
 
-AgentMint hashes evidence, it does not inspect it. It cannot detect sensitive
-data in authorized files. If an agent is authorized to read `reports/*` and
-a report contains PII, AgentMint will sign a valid receipt.
+The Shield module scans tool inputs and outputs for known PII, secrets, prompt
+injection, encoding evasion, and structural attacks using 23 compiled regex
+patterns, fuzzy typo matching, and Shannon entropy detection.
 
-**AgentMint is authorization. DLP is a separate layer.**
+**Mitigated:** `scan(data)` returns threats with category, severity, and
+field path. Scans both inbound (tool arguments) and outbound (tool results).
 
+**Remaining limits:** Pattern-based only. No ML classifier, no LLM-in-the-loop.
+Shield does not block actions itself — the caller must act on `result.blocked`.
+
+**Shield is Layer 1.** Semantic analysis is future work.
 ---
 
 ## 10. Plan expiry at check time only
