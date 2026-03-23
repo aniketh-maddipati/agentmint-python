@@ -61,6 +61,7 @@ plan = mint.issue_plan(
 )
 
 result = mint.delegate(plan, "claude-sonnet-4-20250514", "read:public:report.txt")
+# enable_timestamp=False skips the network call to FreeTSA during local dev
 if result.ok:
     # result.receipt contains Ed25519 signed proof
     pass

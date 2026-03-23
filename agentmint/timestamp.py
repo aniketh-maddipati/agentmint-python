@@ -106,7 +106,7 @@ class TimestampResult:
 
 # ── Public API ─────────────────────────────────────────────
 
-def timestamp(data: bytes) -> TimestampResult:
+def timestamp(data: bytes, url: str | None = None) -> TimestampResult:
     """Timestamp arbitrary data via FreeTSA.
 
     Builds an RFC 3161 timestamp query from a SHA-512 digest of the
@@ -132,14 +132,15 @@ def timestamp(data: bytes) -> TimestampResult:
     digest = hashlib.sha512(data).digest()
     digest_hex = digest.hex()
 
+    tsa_url = url or FREETSA_TSR_URL
     tsq = _build_tsq(digest)
-    tsr = _submit_tsq_with_retry(tsq)
+    tsr = _submit_tsq_with_retry(tsq, tsa_url=tsa_url)
 
     return TimestampResult(
         tsq=tsq,
         tsr=tsr,
         digest_hex=digest_hex,
-        tsa_url=FREETSA_TSR_URL,
+        tsa_url=tsa_url,
     )
 
 
@@ -256,13 +257,13 @@ def _validate_data(data: bytes) -> None:
 
 # ── HTTP helpers ───────────────────────────────────────────
 
-def _submit_tsq_with_retry(tsq: bytes) -> bytes:
+def _submit_tsq_with_retry(tsq: bytes, tsa_url: str = FREETSA_TSR_URL) -> bytes:
     """Submit a timestamp query to FreeTSA with retry on transient failures."""
     last_error = None
 
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            return _submit_tsq(tsq)
+            return _submit_tsq(tsq, tsa_url=tsa_url)
         except TimestampError:
             raise
         except requests.exceptions.ConnectionError as e:
@@ -281,10 +282,10 @@ def _submit_tsq_with_retry(tsq: bytes) -> bytes:
     )
 
 
-def _submit_tsq(tsq: bytes) -> bytes:
+def _submit_tsq(tsq: bytes, tsa_url: str = FREETSA_TSR_URL) -> bytes:
     """Submit a single timestamp query to FreeTSA."""
     resp = requests.post(
-        FREETSA_TSR_URL,
+        tsa_url,
         data=tsq,
         headers={"Content-Type": "application/timestamp-query"},
         timeout=HTTP_TIMEOUT_SECONDS,

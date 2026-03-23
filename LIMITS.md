@@ -132,3 +132,12 @@ Shield does not block actions itself — the caller must act on `result.blocked`
 A plan's TTL is checked when `notarise()` is called. There is a gap between
 the scope check and actual execution. This is inherent in every auth/exec
 separation system (OAuth tokens have the same property).
+
+---
+
+## 11. Single-threaded
+
+Notary, CircuitBreaker, and FileSink are not thread-safe. Use one instance
+per thread or add external locking. This is by design — the library targets
+single-process agent runtimes (Cursor, Claude Code, local dev). Multi-threaded
+deployments need a synchronization layer the library does not provide.
