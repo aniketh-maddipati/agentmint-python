@@ -869,11 +869,19 @@ class Notary:
                     elif escalate_after is not None and count >= escalate_after:
                         session_escalation = f"escalate:{pattern}:{count}/{escalate_after}"
 
+        # Feature 5: session deny overrides policy evaluation
+        is_session_denied = (
+            session_escalation is not None
+            and session_escalation.startswith("denied:")
+        )
+        final_in_policy = False if is_session_denied else evaluation.in_policy
+        final_reason = session_escalation if is_session_denied else evaluation.reason
+
         # Feature 5: build trajectory entry
         trajectory_entry = {
             "action": action,
             "agent": agent,
-            "in_policy": evaluation.in_policy,
+            "in_policy": final_in_policy,
             "observed_at": observed_at,
         }
         self._session_trajectory.append(trajectory_entry)
@@ -886,8 +894,8 @@ class Notary:
             plan_id=plan.id,
             agent=agent,
             action=action,
-            in_policy=evaluation.in_policy,
-            policy_reason=evaluation.reason,
+            in_policy=final_in_policy,
+            policy_reason=final_reason,
             evidence_hash=evidence_hash,
             evidence=evidence,
             observed_at=observed_at,

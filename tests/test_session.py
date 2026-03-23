@@ -96,6 +96,8 @@ class TestSessionPolicy:
         r4 = notary.notarise("read:x", "a", plan, evidence={"k": "x"}, enable_timestamp=False)
         assert r4.session_escalation is not None
         assert "denied" in r4.session_escalation
+        assert r4.in_policy is False
+        assert "denied:" in r4.policy_reason
 
     def test_no_policy_means_no_escalation(self) -> None:
         notary = Notary()
