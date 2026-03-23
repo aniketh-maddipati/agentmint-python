@@ -55,7 +55,7 @@ True
   block  secret      aws_access_key
 ```
 
-23 compiled patterns across 5 categories: PII, secrets, injection, encoding, structural. Fuzzy matching for typo evasion. Entropy detection for obfuscated payloads. Sub-millisecond, zero network calls.
+23 compiled patterns across 5 categories: PII, secrets, injection, encoding, structural. Fuzzy matching for typo evasion. Entropy detection for obfuscated payloads. Fast, zero network calls.
 
 ### Enforce scoped permissions per action
 
@@ -186,6 +186,6 @@ Receipt fields map to SOC 2, NIST AI RMF, HIPAA §164.312, EU AI Act Article 12.
 
 ## Status
 
-Solo founder. 184 tests. MIT license. Looking for anyone building agents that need scoped permissions over tools.
+184 tests. MIT license. Looking for anyone building agents that need scoped permissions over tools.
 
 [Open an issue](https://github.com/aniketh-maddipati/agentmint-python/issues) · [linkedin.com/in/anikethmaddipati](https://linkedin.com/in/anikethmaddipati)
