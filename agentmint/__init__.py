@@ -1,12 +1,10 @@
 """
 AgentMint — Independent notary for AI agent actions.
-
 Produces cryptographic receipts proving what an agent was authorized
 to do, and that the record was not altered after the fact.
 
 Quickstart (Notary — primary interface):
     from agentmint.notary import Notary
-
     notary = Notary()
     plan = notary.create_plan(user="admin@co.com", action="ops", scope=["tts:*"])
     receipt = notary.notarise(action="tts:standard:abc", agent="voice-agent",
@@ -15,7 +13,6 @@ Quickstart (Notary — primary interface):
 
 Scope layer (lightweight authorization checks):
     from agentmint import AgentMint
-
     mint = AgentMint()
     receipt = mint.issue("deploy", "alice@co.com")
     assert mint.verify(receipt)
@@ -38,8 +35,12 @@ from .decorator import (
     get_receipt,
     clear_receipt,
 )
+from .circuit_breaker import CircuitBreaker, BreakerResult
+from .sinks import FileSink, Sink
+from .shield import scan, ShieldResult, Threat
 
 __version__ = "0.1.0"
+
 __all__ = [
     # Core
     "AgentMint",
@@ -61,4 +62,14 @@ __all__ = [
     "set_receipt",
     "get_receipt",
     "clear_receipt",
+    # Shield
+    "scan",
+    "ShieldResult",
+    "Threat",
+    # Circuit breaker
+    "CircuitBreaker",
+    "BreakerResult",
+    # Sinks
+    "FileSink",
+    "Sink",
 ]

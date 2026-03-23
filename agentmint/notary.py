@@ -31,6 +31,7 @@ import stat
 import tempfile
 import uuid
 import zipfile
+from collections import deque
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
@@ -58,6 +59,7 @@ __all__ = [
     "PolicyEvaluation",
     "ChainVerification",
     "verify_chain",
+    "intersect_scopes",
 ]
 
 
@@ -264,6 +266,15 @@ class NotarisedReceipt:
     key_id: str = ""
     agent_signature: str = ""
     agent_key_id: str = ""
+    # Feature 4: receipt upgrades
+    policy_hash: str = ""
+    output_hash: str = ""
+    # Feature 5: session context
+    session_id: str = ""
+    session_trajectory: tuple[dict[str, Any], ...] = ()
+    session_escalation: Optional[str] = None
+    # Feature 6: reasoning capture
+    reasoning_hash: Optional[str] = None
 
     @property
     def short_id(self) -> str:
@@ -285,6 +296,21 @@ class NotarisedReceipt:
             "key_id": self.key_id,
             "agent_key_id": self.agent_key_id,
         }
+        # Feature 4: policy + output hashes
+        if self.policy_hash:
+            d["policy_hash"] = self.policy_hash
+        if self.output_hash:
+            d["output_hash"] = self.output_hash
+        # Feature 5: session context
+        if self.session_id:
+            d["session_id"] = self.session_id
+        if self.session_trajectory:
+            d["session_trajectory"] = list(self.session_trajectory)
+        if self.session_escalation:
+            d["session_escalation"] = self.session_escalation
+        # Feature 6: reasoning hash
+        if self.reasoning_hash:
+            d["reasoning_hash"] = self.reasoning_hash
         # Chain hash is included in signature if present
         if self.previous_receipt_hash is not None:
             d["previous_receipt_hash"] = self.previous_receipt_hash
@@ -548,11 +574,11 @@ def _timestamp_with_fallback(
     urls = tsa_urls or DEFAULT_TSA_URLS
     if len(urls) == 1:
         # Fast path — no fallback needed
-        return ts_timestamp(data)
+        return ts_timestamp(data, url=urls[0])
     last_error: Optional[Exception] = None
     for url in urls:
         try:
-            return ts_timestamp(data)
+            return ts_timestamp(data, url=url)
         except TimestampError as e:
             last_error = e
             continue
@@ -562,6 +588,51 @@ def _timestamp_with_fallback(
 # ── Notary ─────────────────────────────────────────────────
 
 _CHAIN_STATE_FILE = "chain_state.json"
+
+
+# ── Feature 4: policy hash ────────────────────────────────
+
+def _compute_policy_hash(plan: PlanReceipt) -> str:
+    """SHA-256 of canonical(scope + checkpoints + delegates_to)."""
+    policy_data = {
+        "scope": list(plan.scope),
+        "checkpoints": list(plan.checkpoints),
+        "delegates_to": list(plan.delegates_to),
+    }
+    return hashlib.sha256(_canonical_json(policy_data)).hexdigest()
+
+
+# ── Feature 7: scope intersection for multi-agent delegation ──
+
+def intersect_scopes(
+    parent_scope: Sequence[str],
+    requested: Sequence[str],
+) -> tuple[str, ...]:
+    """Compute the intersection of parent and requested scopes.
+
+    Rules:
+    - Exact match: keep
+    - Child more specific than parent wildcard: keep child
+    - Parent more specific than child wildcard: keep parent
+    - No overlap: skip
+
+    Returns empty tuple if no intersection (= deny).
+    """
+    result: list[str] = []
+    for child in requested:
+        for parent in parent_scope:
+            if child == parent:
+                if child not in result:
+                    result.append(child)
+            elif matches_pattern(child, parent):
+                # child is more specific, parent is wildcard — keep child
+                if child not in result:
+                    result.append(child)
+            elif matches_pattern(parent, child):
+                # parent is more specific, child is wildcard — keep parent
+                if parent not in result:
+                    result.append(parent)
+    return tuple(result)
 
 
 def _load_chain_state(key_dir: Optional[Path]) -> dict[str, Optional[str]]:
@@ -608,12 +679,20 @@ class Notary:
     Improvement 4.5: tsa_urls for fallback TSA.
     """
 
-    __slots__ = ("_key", "_vk", "_key_id", "_key_dir", "_package", "_chain_hashes", "_tsa_urls")
+    __slots__ = (
+        "_key", "_vk", "_key_id", "_key_dir", "_package", "_chain_hashes", "_tsa_urls",
+        "_circuit_breaker", "_sink",
+        "_session_id", "_session_policy", "_session_counters", "_session_trajectory",
+        "_child_plans",
+    )
 
     def __init__(
         self,
         key: str | Path | None = None,
         tsa_urls: list[str] | None = None,
+        circuit_breaker: Any = None,
+        sink: Any = None,
+        session_policy: Optional[dict[str, Any]] = None,
     ) -> None:
         # Improvement 4.1: key persistence via KeyStore
         if key is None:
@@ -635,6 +714,17 @@ class Notary:
         self._chain_hashes: dict[str, Optional[str]] = _load_chain_state(self._key_dir)
         # Improvement 4.5: fallback TSA
         self._tsa_urls = tsa_urls or DEFAULT_TSA_URLS
+        # Feature 2: circuit breaker integration
+        self._circuit_breaker = circuit_breaker
+        # Feature 3: sink integration
+        self._sink = sink
+        # Feature 5: session context
+        self._session_id: str = str(uuid.uuid4())
+        self._session_policy: Optional[dict[str, Any]] = session_policy
+        self._session_counters: dict[str, int] = {}
+        self._session_trajectory: deque = deque(maxlen=20)
+        # Feature 7: child plan tracking
+        self._child_plans: dict[str, list[str]] = {}
 
     @property
     def key_id(self) -> str:
@@ -707,6 +797,8 @@ class Notary:
         evidence: dict[str, Any],
         enable_timestamp: bool = True,
         agent_key: Optional[SigningKey] = None,
+        output: Optional[dict[str, Any]] = None,
+        reasoning: Optional[str] = None,
     ) -> NotarisedReceipt:
         """Observe an action and produce signed evidence.
 
@@ -716,6 +808,17 @@ class Notary:
         action = _require_non_empty_string(action, "action", MAX_ACTION_LEN)
         agent = _require_non_empty_string(agent, "agent", MAX_IDENTITY_LEN)
         evidence = _require_evidence(evidence)
+
+        # Feature 2: circuit breaker — check FIRST, before policy
+        if self._circuit_breaker is not None:
+            br = self._circuit_breaker.check(agent)
+            if not br.is_allowed:
+                # Short-circuit: build a denied receipt without policy eval
+                return self._make_denied_receipt(
+                    action, agent, plan, evidence,
+                    f"circuit_breaker:{br.reason}",
+                    enable_timestamp,
+                )
 
         evaluation = evaluate_policy(
             action=action,
@@ -741,6 +844,41 @@ class Notary:
             agent_sig = agent_key.sign(evidence_bytes).signature.hex()
             agent_kid = _derive_key_id(agent_key.verify_key)
 
+        # Feature 4: compute policy_hash and output_hash
+        policy_hash = _compute_policy_hash(plan)
+        output_hash = ""
+        if output is not None:
+            output_bytes = _canonical_json(output)
+            output_hash = hashlib.sha256(output_bytes).hexdigest()
+
+        # Feature 6: reasoning hash
+        reasoning_hash: Optional[str] = None
+        if reasoning is not None:
+            reasoning_hash = hashlib.sha256(reasoning.encode("utf-8")).hexdigest()
+
+        # Feature 5: session escalation check
+        session_escalation: Optional[str] = None
+        if self._session_policy:
+            for pattern, limits in self._session_policy.items():
+                if matches_pattern(action, pattern):
+                    count = self._session_counters.get(pattern, 0)
+                    deny_after = limits.get("deny_after")
+                    escalate_after = limits.get("escalate_after")
+                    if deny_after is not None and count >= deny_after:
+                        session_escalation = f"denied:{pattern}:{count}/{deny_after}"
+                    elif escalate_after is not None and count >= escalate_after:
+                        session_escalation = f"escalate:{pattern}:{count}/{escalate_after}"
+
+        # Feature 5: build trajectory entry
+        trajectory_entry = {
+            "action": action,
+            "agent": agent,
+            "in_policy": evaluation.in_policy,
+            "observed_at": observed_at,
+        }
+        self._session_trajectory.append(trajectory_entry)
+        recent_trajectory = tuple(self._session_trajectory)[-5:]
+
         # Build receipt with placeholder signature — signable_dict() is
         # the single source of truth for what gets signed.
         unsigned = NotarisedReceipt(
@@ -759,6 +897,12 @@ class Notary:
             key_id=self._key_id,
             agent_signature=agent_sig,
             agent_key_id=agent_kid,
+            policy_hash=policy_hash,
+            output_hash=output_hash,
+            session_id=self._session_id,
+            session_trajectory=tuple(recent_trajectory),
+            session_escalation=session_escalation,
+            reasoning_hash=reasoning_hash,
         )
 
         signature = _sign(self._key, unsigned.signable_dict())
@@ -786,6 +930,24 @@ class Notary:
         if self._package and self._package.plan.id == plan.id:
             self._package.add(receipt)
 
+        # Feature 2: record call in circuit breaker
+        if self._circuit_breaker is not None:
+            self._circuit_breaker.record(agent)
+
+        # Feature 3: emit to sink
+        if self._sink is not None:
+            self._sink.emit(receipt)
+
+        # Feature 5: update session counters
+        if self._session_policy:
+            for pattern in self._session_policy:
+                if matches_pattern(action, pattern):
+                    self._session_counters[pattern] = self._session_counters.get(pattern, 0) + 1
+
+        # Feature 6: store reasoning in evidence if provided
+        if reasoning is not None and self._package and self._package.plan.id == plan.id:
+            pass  # reasoning text stays in caller's scope; hash is in receipt
+
         return receipt
 
     def verify_receipt(self, receipt: NotarisedReceipt) -> bool:
@@ -793,6 +955,120 @@ class Notary:
 
     def verify_plan(self, plan: PlanReceipt) -> bool:
         return _verify_signature(self._vk, plan.signable_dict(), plan.signature)
+
+    def _make_denied_receipt(
+        self,
+        action: str,
+        agent: str,
+        plan: PlanReceipt,
+        evidence: dict[str, Any],
+        reason: str,
+        enable_timestamp: bool,
+    ) -> NotarisedReceipt:
+        """Build a denied receipt (circuit breaker or session deny)."""
+        evidence_bytes = _canonical_json(evidence)
+        evidence_hash = hashlib.sha512(evidence_bytes).hexdigest()
+        observed_at = _utc_now().isoformat()
+        receipt_id = str(uuid.uuid4())
+        prev_hash = self._chain_hashes.get(plan.id)
+        policy_hash = _compute_policy_hash(plan)
+
+        unsigned = NotarisedReceipt(
+            id=receipt_id,
+            plan_id=plan.id,
+            agent=agent,
+            action=action,
+            in_policy=False,
+            policy_reason=reason,
+            evidence_hash=evidence_hash,
+            evidence=evidence,
+            observed_at=observed_at,
+            signature="",
+            previous_receipt_hash=prev_hash,
+            plan_signature=plan.signature,
+            key_id=self._key_id,
+            policy_hash=policy_hash,
+            session_id=self._session_id,
+        )
+        signature = _sign(self._key, unsigned.signable_dict())
+
+        ts_result = None
+        if enable_timestamp:
+            signed_payload = _canonical_json({**unsigned.signable_dict(), "signature": signature})
+            try:
+                ts_result = _timestamp_with_fallback(signed_payload, self._tsa_urls)
+            except TimestampError:
+                pass  # graceful degradation for denied receipts
+
+        receipt = replace(unsigned, signature=signature, timestamp_result=ts_result)
+
+        signed_payload_bytes = _canonical_json({**unsigned.signable_dict(), "signature": signature})
+        self._chain_hashes[plan.id] = hashlib.sha256(signed_payload_bytes).hexdigest()
+        _save_chain_state(self._key_dir, self._chain_hashes)
+
+        if self._package and self._package.plan.id == plan.id:
+            self._package.add(receipt)
+
+        if self._sink is not None:
+            self._sink.emit(receipt)
+
+        return receipt
+
+    # Feature 7: multi-agent delegation
+
+    def delegate_to_agent(
+        self,
+        parent_plan: PlanReceipt,
+        child_agent: str,
+        requested_scope: list[str],
+        action: str = "",
+        checkpoints: list[str] | None = None,
+        ttl_seconds: int = DEFAULT_TTL,
+    ) -> PlanReceipt:
+        """Create a child plan with scope intersected from parent.
+
+        Returns a new PlanReceipt whose scope is the intersection of
+        parent_plan.scope and requested_scope. Raises NotaryError if
+        the intersection is empty (no delegable permissions).
+        """
+        child_agent = _require_non_empty_string(child_agent, "child_agent", MAX_IDENTITY_LEN)
+        requested_t = _require_string_list(requested_scope, "requested_scope")
+
+        effective_scope = intersect_scopes(parent_plan.scope, requested_t)
+        if not effective_scope:
+            raise NotaryError(
+                f"scope intersection is empty — parent scope {list(parent_plan.scope)} "
+                f"does not overlap with requested {list(requested_t)}"
+            )
+
+        child_plan = self.create_plan(
+            user=parent_plan.user,
+            action=action or parent_plan.action,
+            scope=list(effective_scope),
+            checkpoints=checkpoints or list(parent_plan.checkpoints),
+            delegates_to=[child_agent],
+            ttl_seconds=ttl_seconds,
+        )
+
+        # Track parent → child relationship
+        if parent_plan.id not in self._child_plans:
+            self._child_plans[parent_plan.id] = []
+        self._child_plans[parent_plan.id].append(child_plan.id)
+
+        return child_plan
+
+    def audit_tree(self, plan_id: str) -> dict[str, Any]:
+        """Return the delegation tree rooted at plan_id."""
+        children = self._child_plans.get(plan_id, [])
+        return {
+            "plan_id": plan_id,
+            "children": [self.audit_tree(cid) for cid in children],
+        }
+
+    @property
+    def session_id(self) -> str:
+        """Current session identifier."""
+        return self._session_id
 
     def export_evidence(
         self,
