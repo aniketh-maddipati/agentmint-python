@@ -1,0 +1,179 @@
+[
+  {
+    "id": "a77247c6-e479-4262-9ba8-4266811d38d3",
+    "type": "notarised_evidence",
+    "plan_id": "b29b1bfe-5696-4649-b9be-0795d04c42bb",
+    "agent": "receipts_demo_agent",
+    "action": "tool:get_weather",
+    "in_policy": true,
+    "policy_reason": "matched scope tool:get_weather",
+    "evidence_hash_sha512": "e7e384d758f19cc5861b1ff5da7f7d8a7155a229609a5c3c45d6e011ccbddce341842131066adb6c6e708371dd3b8225a366590ac85772840139a5c298f8f787",
+    "evidence": {
+      "tool": "get_weather",
+      "args_hash": "f00dd85af665bde6e895e8c106d1f64940d7d3f3dc40eac64fa114d9d951b732",
+      "output_hash": "c185979accd625a3ce0ce6f420323b4868ffb34b85f6f17e96d50b259520bbcf"
+    },
+    "observed_at": "2026-03-27T23:34:10.440519+00:00",
+    "aiuc_controls": [
+      "E015",
+      "D003",
+      "B001"
+    ],
+    "key_id": "10506413dd401dcc",
+    "agent_key_id": "acadd827da80dbb6",
+    "policy_hash": "4fee82b87e3cfb1254ae1b22ff24ec5f3ea7bbacc621dd5287d0dc3dffd7a3e0",
+    "session_id": "ce4b56f4-cef2-4ef4-a1ca-d470c276f688",
+    "session_trajectory": [
+      {
+        "action": "tool:get_weather",
+        "agent": "receipts_demo_agent",
+        "in_policy": true,
+        "observed_at": "2026-03-27T23:34:10.440519+00:00"
+      }
+    ],
+    "plan_signature": "66ea5020d56e08da75bde4bb53be66c615439d5e36b5782588a03a90173cc7ad316b085165547caf1a6207166295843f8b5c03d2f829e73f1683c8d222b1c905",
+    "signature": "fa06a3811d6859b897f21f1e2425e0b23a07c5768358263e2e2a3929da9f79094a2eebb9a7fa02e9e33a01b137e62dcaa2b018fc021d9884bf98a0f8a7a9c006"
+  },
+  {
+    "id": "4f2d519a-6e20-43ed-8333-c4c80ac14417",
+    "type": "notarised_evidence",
+    "plan_id": "b29b1bfe-5696-4649-b9be-0795d04c42bb",
+    "agent": "receipts_demo_agent",
+    "action": "tool:lookup_account",
+    "in_policy": true,
+    "policy_reason": "matched scope tool:lookup_account",
+    "evidence_hash_sha512": "399c0eec84daae1fc935e1008dde90076d369f58f65dac7364509979a28b3bf30521d423ed297cbb49ae454a3365c0247649b840471407b1f596e4db6cf99d20",
+    "evidence": {
+      "tool": "lookup_account",
+      "args_hash": "da9ee9b3365e27bc2f5545a0ed9f5f4d8c0e0955ab5b7d300425a7a20d0c904d",
+      "output_hash": "78b004a17373fde0c26b9401baae37011ca87d5121d5c7b4cbb39f8ba28047b6"
+    },
+    "observed_at": "2026-03-27T23:34:10.440648+00:00",
+    "aiuc_controls": [
+      "E015",
+      "D003",
+      "B001"
+    ],
+    "key_id": "10506413dd401dcc",
+    "agent_key_id": "acadd827da80dbb6",
+    "policy_hash": "4fee82b87e3cfb1254ae1b22ff24ec5f3ea7bbacc621dd5287d0dc3dffd7a3e0",
+    "session_id": "ce4b56f4-cef2-4ef4-a1ca-d470c276f688",
+    "session_trajectory": [
+      {
+        "action": "tool:get_weather",
+        "agent": "receipts_demo_agent",
+        "in_policy": true,
+        "observed_at": "2026-03-27T23:34:10.440519+00:00"
+      },
+      {
+        "action": "tool:lookup_account",
+        "agent": "receipts_demo_agent",
+        "in_policy": true,
+        "observed_at": "2026-03-27T23:34:10.440648+00:00"
+      }
+    ],
+    "plan_signature": "66ea5020d56e08da75bde4bb53be66c615439d5e36b5782588a03a90173cc7ad316b085165547caf1a6207166295843f8b5c03d2f829e73f1683c8d222b1c905",
+    "signature": "15676eb6d6c7162279f1e0ee632403b4caf02d840d1dc6f574f6aaa030f670758a1e08537069cb833e28be1fece616e057e94e250b4ec0450bac138725111f0f"
+  },
+  {
+    "id": "c7aa09c8-4cce-4a12-aca4-9aa46ef3cc7a",
+    "type": "notarised_evidence",
+    "plan_id": "b29b1bfe-5696-4649-b9be-0795d04c42bb",
+    "agent": "notification_agent",
+    "action": "tool:send_notification",
+    "in_policy": true,
+    "policy_reason": "matched scope tool:send_notification",
+    "evidence_hash_sha512": "23ab07a566af45d76c10eec1238f24d8ae10857868a2e7d3b9d787dc51507b8d138df332902dd9ddca0af62213b38650ead5d69ef714754d18e2388d9994616a",
+    "evidence": {
+      "tool": "send_notification",
+      "args_hash": "1821be805f4695abdd9e4b253a32ccc4ccff589c3f6cad6be72f202b8fedc788",
+      "output_hash": "4f3746a0be11bc4cb8cfb97bb61a3000ca349eac2d5fb7903e91f425f70f7146"
+    },
+    "observed_at": "2026-03-27T23:34:12.580676+00:00",
+    "aiuc_controls": [
+      "E015",
+      "D003",
+      "B001"
+    ],
+    "key_id": "10506413dd401dcc",
+    "agent_key_id": "acadd827da80dbb6",
+    "policy_hash": "4fee82b87e3cfb1254ae1b22ff24ec5f3ea7bbacc621dd5287d0dc3dffd7a3e0",
+    "session_id": "ce4b56f4-cef2-4ef4-a1ca-d470c276f688",
+    "session_trajectory": [
+      {
+        "action": "tool:get_weather",
+        "agent": "receipts_demo_agent",
+        "in_policy": true,
+        "observed_at": "2026-03-27T23:34:10.440519+00:00"
+      },
+      {
+        "action": "tool:lookup_account",
+        "agent": "receipts_demo_agent",
+        "in_policy": true,
+        "observed_at": "2026-03-27T23:34:10.440648+00:00"
+      },
+      {
+        "action": "tool:send_notification",
+        "agent": "notification_agent",
+        "in_policy": true,
+        "observed_at": "2026-03-27T23:34:12.580676+00:00"
+      }
+    ],
+    "previous_receipt_hash": "e9e655a4d645cbcc80d1a4a9f95b7d6259d2ead6a4bfa20ac99d0d801006137d",
+    "plan_signature": "66ea5020d56e08da75bde4bb53be66c615439d5e36b5782588a03a90173cc7ad316b085165547caf1a6207166295843f8b5c03d2f829e73f1683c8d222b1c905",
+    "signature": "bf1197fd4f93dba8f357a206df3d64a231ce0c546a74b4d2a6410ca682b602e2735dda78ee115613b34c357db457e78a04507d579f8a4057d2f24baf7770c506"
+  },
+  {
+    "id": "f7f65d91-de6c-46fb-ae5e-d6ecd4fbcbd1",
+    "type": "notarised_evidence",
+    "plan_id": "b29b1bfe-5696-4649-b9be-0795d04c42bb",
+    "agent": "notification_agent",
+    "action": "agent:turn:notification_agent",
+    "in_policy": true,
+    "policy_reason": "matched scope agent:turn:notification_agent",
+    "evidence_hash_sha512": "cc2a1d54465326ef37e21b58be6a804d26fd00e0d08e885bef3f6e2e1e353096bed83a48b38c64963de219a604d579d06e87626a2739e7c90b44e393a3599331",
+    "evidence": {
+      "event": "agent_turn_complete",
+      "has_output": true
+    },
+    "observed_at": "2026-03-27T23:34:14.440361+00:00",
+    "aiuc_controls": [
+      "E015",
+      "D003",
+      "B001"
+    ],
+    "key_id": "10506413dd401dcc",
+    "agent_key_id": "",
+    "policy_hash": "4fee82b87e3cfb1254ae1b22ff24ec5f3ea7bbacc621dd5287d0dc3dffd7a3e0",
+    "session_id": "ce4b56f4-cef2-4ef4-a1ca-d470c276f688",
+    "session_trajectory": [
+      {
+        "action": "tool:get_weather",
+        "agent": "receipts_demo_agent",
+        "in_policy": true,
+        "observed_at": "2026-03-27T23:34:10.440519+00:00"
+      },
+      {
+        "action": "tool:lookup_account",
+        "agent": "receipts_demo_agent",
+        "in_policy": true,
+        "observed_at": "2026-03-27T23:34:10.440648+00:00"
+      },
+      {
+        "action": "tool:send_notification",
+        "agent": "notification_agent",
+        "in_policy": true,
+        "observed_at": "2026-03-27T23:34:12.580676+00:00"
+      },
+      {
+        "action": "agent:turn:notification_agent",
+        "agent": "notification_agent",
+        "in_policy": true,
+        "observed_at": "2026-03-27T23:34:14.440361+00:00"
+      }
+    ],
+    "previous_receipt_hash": "1177207939f05fd0e748ec65c27e6b00dffaf3303e8c6b527baed0771a6f47f6",
+    "plan_signature": "66ea5020d56e08da75bde4bb53be66c615439d5e36b5782588a03a90173cc7ad316b085165547caf1a6207166295843f8b5c03d2f829e73f1683c8d222b1c905",
+    "signature": "c20530ebdba761dd6d8b2ec44a7a1b87e7ccef33f0b45668d18ee28137a99ca87257c412f7801992df576eae9459505349a5c5206153dffea4af75441d00a709"
+  }
+]
