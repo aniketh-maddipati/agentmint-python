@@ -170,6 +170,24 @@ Circuit Breaker → Shield → Scope Check → Checkpoint Gate → Notary → Si
 
 **SIEM-ready logs** — JSONL sink with standard field names. Every receipt streams as it's signed.
 
+## Framework Integrations
+
+AgentMint works with any Python agent framework via hooks and callbacks — no SDK modification needed. Each integration produces Ed25519-signed, hash-chained receipts for every tool call.
+
+| Framework | Hook point | What it adds | Demo |
+|---|---|---|---|
+| **OpenAI Agents SDK** | `RunHooks` + tool-level signing | Receipts for tool calls + agent handoff chain-of-custody. Two signatures per receipt (notary + agent co-sign). | [examples/openai_agents_receipts_demo](examples/openai_agents_receipts_demo/) |
+| **CrewAI** | `@before_tool_call` decorator | Scoped delegation gate — out-of-scope calls blocked before execution. Denials signed too. | [examples/crewai_receipts_demo](examples/crewai_receipts_demo/) |
+| **Google ADK** | `before_tool_callback` / `after_tool_callback` | Deterministic receipt schema with policy evaluation. Addresses [adk-python#4502](https://github.com/google/adk-python/issues/4502). | Coming soon |
+
+**Integration guides:**
+
+- [AgentMint × OpenAI Agents SDK](docs/openai_agents_integration.md) — two agents, handoff tracking, receipt chain, addresses [#2643](https://github.com/openai/openai-agents-python/issues/2643)
+- [AgentMint × CrewAI](docs/crewai_integration.md) — scoped delegation, gated execution, denial receipts
+- [AgentMint × Google ADK](docs/google_adk_integration.md) — callback-based receipts, comparison with closed PR #4503
+
+The integration pattern is the same everywhere: ~20 lines of hook code, zero framework modification, receipts exported as `receipts.json` for independent verification.
+
 ## Tests
 
 ```bash
