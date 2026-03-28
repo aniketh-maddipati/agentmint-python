@@ -28,6 +28,7 @@ analyst = Agent(role="analyst", tools=[WeatherTool(), SecretTool()])
 
 **After** — scoped delegation, gated execution, signed receipts:
 
+> Abbreviated — full runnable demo coming soon.
 ```python
 @before_tool_call
 def gate(ctx: ToolCallHookContext) -> bool | None:

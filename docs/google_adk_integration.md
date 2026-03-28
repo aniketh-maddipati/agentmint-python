@@ -17,7 +17,7 @@ ADK issue #4502 asked for "deterministic tool-call receipt schema for invocation
 ## Integration pattern
 
 ADK's `before_tool_callback` and `after_tool_callback` provide clean interception points:
-
+> Abbreviated — full runnable demo coming soon.
 ```python
 from google.adk.agents import Agent
 from agentmint import AgentMint
@@ -39,6 +39,16 @@ notary_plan = notary.create_plan(
     scope=["tool:get_weather", "tool:lookup_account"],
     delegates_to=["analyst"],
 )
+
+import hashlib
+
+def sha256(data) -> str:
+    return hashlib.sha256(str(data).encode()).hexdigest()
+
+def after_tool(callback_context, tool_name, args, result):
+    """Capture output hash after tool execution."""
+    evidence = {"tool": tool_name, "output_hash": sha256(result)}
+    notary.notarise(action=f"tool:{tool_name}", agent="analyst", plan=notary_plan, evidence=evidence)
 
 def before_tool(callback_context, tool_name, args):
     """Gate: check delegation, sign receipt, allow or block."""
