@@ -38,10 +38,6 @@ quickstart_evidence/
 # pytest
 .pytest_cache/
 
-# Build artifacts
-build/
-dist/
-*.egg-info/
 
 # Generated evidence (regenerate with python3 generate_evidence.py)
 agentmint_evidence/
