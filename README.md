@@ -2,7 +2,7 @@
 
 # 🪙 AgentMint
 
-**Runtime enforcement for AI agent tool calls.**
+**Stop your AI agent before it does something you didn't authorize.**
 
 Scoped permissions. Content scanning. Rate limiting. Signed audit trail.
 
@@ -12,25 +12,90 @@ Scoped permissions. Content scanning. Rate limiting. Signed audit trail.
 
 </div>
 
-## What is AgentMint?
-
-AgentMint is a Python library that enforces security at the tool-call boundary of AI agents. It scans content, enforces scoped permissions, rate-limits agents, and produces cryptographic receipts — all before the action executes.
-
-Unlike prompt-level guards ([Guardrails AI](https://github.com/guardrails-ai/guardrails), [Lakera](https://www.lakera.ai/), [LLM Guard](https://github.com/protectai/llm-guard)), AgentMint enforces **per-action permissions**, not per-prompt validation. Every decision — allow or deny — gets an Ed25519 signed receipt verifiable with `openssl` alone. No AgentMint software needed.
-
-Works with any Python agent framework — MCP, CrewAI, OpenAI Agents SDK, or raw API calls. Runs in Cursor, Claude Code, and local dev where no gateway can reach.
-
-## Installation
-
 ```bash
 pip install agentmint
 ```
 
-Two dependencies (`pynacl`, `requests`). No API keys. No config files. Works offline.
+Two dependencies (`pynacl`, `requests`). No API keys. No config files. Works offline.  
+Listed in the [OWASP Agentic Skills Top 10](https://github.com/OWASP/www-project-agentic-skills-top-10/blob/main/solutions.md) solutions catalog.
 
-## Getting Started
+---
 
-### Scan tool inputs and outputs for threats
+## Quickstart
+
+Copy this. Run it. You'll see a blocked call and the signed receipt proving it was blocked.
+
+```python
+from agentmint import AgentMint
+
+mint = AgentMint(quiet=True)
+
+# Issue a plan: read-only scope, writes require human checkpoint
+plan = mint.issue_plan(
+    action="financial-audit",
+    user="audit-agent@company.com",
+    scope=["read:ledger:*", "read:erp:*"],
+    delegates_to=["sox-agent"],
+    requires_checkpoint=["write:*", "delete:*"],
+)
+
+# Authorized — goes through
+r1 = mint.delegate(plan, "sox-agent", "read:ledger:q4-journal-entries")
+print(r1.status.value)          # ok
+print(r1.receipt.in_policy)     # True
+
+# Not in scope — blocked before execution
+r2 = mint.delegate(plan, "sox-agent", "write:erp:payment-record")
+print(r2.status.value)          # checkpoint_required
+print(r2.receipt.in_policy)     # False
+print(r2.receipt.signature)     # Ed25519 — tamper this and verify_receipt() fails
+print(r2.receipt.previous_receipt_hash)  # SHA-256 chain to r1's receipt
+```
+
+Output:
+```
+ok
+True
+checkpoint_required
+False
+T3BlblNTSCBFZDI1NTE5IHNpZ25hdHVyZUFsZ29yaXRobSI6ICJFZDI1NTE5...
+a1f3c8e2d9b4f7c1e8a3d6b9f2c5e8a1d4b7f0c3e6a9d2b5f8c1e4a7d0b3...
+```
+
+The agent never touches the payment record. `r2.receipt` is Ed25519 signed, SHA-256 hash-chained to the previous receipt, and verifiable with `openssl` alone — no AgentMint needed.
+
+To export evidence an auditor can verify independently:
+
+```python
+from pathlib import Path
+mint.notary.export_evidence(Path("./evidence"))
+# Creates evidence/ with receipts.json, public_key.pem, VERIFY.sh
+# Auditor runs: bash VERIFY.sh
+# Output: Ed25519 signature ✓  Hash chain ✓  — pure openssl, zero AgentMint
+```
+
+---
+
+## What it does
+
+Enforces security at the **tool-call boundary** — not the prompt. Every action passes through six layers before execution. Each layer can allow, block, or require human approval. Every decision is signed.
+
+```
+Agent requests action
+        ↓
+Circuit Breaker → Shield → Scope Check → Checkpoint Gate → Notary → Sink
+        ↓                                                           ↓
+    Blocked (signed)                                    Executes (signed)
+```
+
+- **Scoped permissions** — agents get exactly the authority they're issued. Child agents can't exceed parent scope. Delegation automatically narrows access.
+- **Content scanning** — 23 patterns across PII, secrets, injection, encoding, structural. Fuzzy matching, entropy detection. Zero network calls.
+- **Rate limiting** — three states: `closed` → `half-open` (80%) → `open` (blocked). Runaway agents cut off before they drain budget.
+- **Signed audit trail** — Ed25519 on every allow and deny. SHA-256 hash chain. RFC 3161 timestamps. Verify with `openssl` alone.
+
+---
+
+## Scan inputs for threats
 
 ```python
 from agentmint.shield import scan
@@ -46,7 +111,7 @@ print(result.threat_count)  # 3
 for t in result.threats:
     print(f"  {t.severity:5s}  {t.category:10s}  {t.pattern_name}")
 ```
-Output:
+
 ```
 True
 3
@@ -55,34 +120,16 @@ True
   block  secret      aws_access_key
 ```
 
-23 compiled patterns across 5 categories: PII, secrets, injection, encoding, structural. Fuzzy matching for typo evasion. Entropy detection for obfuscated payloads. Fast, zero network calls.
-
-### Enforce scoped permissions per action
+The minimum integration — one line before every tool call:
 
 ```python
-from agentmint import AgentMint
-
-mint = AgentMint(quiet=True)
-plan = mint.issue_plan(
-    action="file-analysis",
-    user="you@company.com",
-    scope=["read:public:*"],                # can read public files
-    delegates_to=["my-agent"],
-    requires_checkpoint=["read:secret:*"],   # secrets need human approval
-)
-
-# In scope — allowed
-r1 = mint.delegate(plan, "my-agent", "read:public:report.txt")
-print(r1.status.value)  # ok
-
-# Out of scope — blocked
-r2 = mint.delegate(plan, "my-agent", "read:secret:credentials.txt")
-print(r2.status.value)  # checkpoint_required
+from agentmint.shield import scan
+if scan(tool_args).blocked: raise RuntimeError("blocked")
 ```
 
-Agent never sees the credentials. Delegate to child agents with automatic scope intersection — a child never gets more authority than its parent.
+---
 
-### Rate limit per agent
+## Rate limit per agent
 
 ```python
 from agentmint.circuit_breaker import CircuitBreaker
@@ -93,100 +140,24 @@ print(result.is_allowed)  # True
 print(result.state)       # closed
 ```
 
-Three states: closed (normal) → half-open (warning at 80%) → open (blocked at 100%). Runaway agents get cut off before they burn your budget.
+Session-aware: the 50th read triggers different enforcement than the first. Per-pattern counters with configurable escalation thresholds. JSONL sink with standard field names — every receipt streams as it's signed, SIEM-ready.
 
-### Verify receipts — no AgentMint needed
+---
 
-```python
-from pathlib import Path
-from agentmint.notary import Notary
+## Framework integrations
 
-notary = Notary()
-plan = notary.create_plan(
-    user="admin@company.com", action="ops",
-    scope=["read:*"], delegates_to=["agent-1"],
-)
+~20 lines of hook code per framework. Zero SDK modification. Receipts exported as `receipts.json`.
 
-receipt = notary.notarise(
-    "read:quarterly-report", "agent-1", plan,
-    evidence={"file": "report.pdf"},
-    enable_timestamp=False,
-)
+| Framework | Hook point | What it adds |
+|---|---|---|
+| **OpenAI Agents SDK** | `RunHooks` + tool-level signing | Receipts for tool calls + handoff chain-of-custody. Two signatures per receipt. |
+| **CrewAI** | `@before_tool_call` | Scoped delegation gate — out-of-scope calls blocked before execution. Denials signed. |
+| **Google ADK** | `before/after_tool_callback` | Deterministic receipt schema with policy evaluation. |
+| **MCP / raw API** | Wrap any tool call | Framework-agnostic. Works in Cursor, Claude Code, local dev. |
 
-print(receipt.in_policy)              # True
-print(receipt.signature[:32] + "…")   # Ed25519 signature
-print(receipt.previous_receipt_hash)  # SHA-256 chain link
+Integration guides: [OpenAI Agents SDK](docs/openai_agents_integration.md) · [CrewAI](docs/crewai_integration.md) · [Google ADK](docs/google_adk_integration.md)
 
-assert notary.verify_receipt(receipt) # True — tamper = failure
-
-# Export for an auditor
-notary.export_evidence(Path("./evidence"))
-# Zip contains receipts, public key, VERIFY.sh
-# Auditor runs: bash VERIFY.sh — pure openssl, zero AgentMint
-```
-
-Ed25519 on every allow and deny. SHA-256 hash chain. RFC 3161 timestamps. The auditor verifies with `openssl` alone.
-
-## Add it to your agent
-
-Minimum — one line before every tool call:
-
-```python
-from agentmint.shield import scan
-if scan(tool_args).blocked: raise RuntimeError("blocked")
-```
-
-Full enforcement with scoped delegation:
-
-```python
-from agentmint import AgentMint
-
-mint = AgentMint(quiet=True)
-plan = mint.issue_plan(
-    action="research",
-    user="admin@company.com",
-    scope=["read:docs:*", "search:web:*"],
-    delegates_to=["research-agent"],
-    requires_checkpoint=["write:*", "send:*"],
-)
-
-result = mint.delegate(plan, "research-agent", "read:docs:quarterly-report")
-if not result.ok:
-    raise RuntimeError(result.reason)
-# result.receipt — Ed25519 signed proof
-```
-
-## How it works
-
-```
-Agent requests action
-        ↓
-Circuit Breaker → Shield → Scope Check → Checkpoint Gate → Notary → Sink
-        ↓                                                           ↓
-    Blocked (signed)                                    Action executes (signed)
-```
-
-**Session-aware policy** — The 50th read triggers different enforcement than the first. Per-pattern counters and escalation thresholds.
-
-**SIEM-ready logs** — JSONL sink with standard field names. Every receipt streams as it's signed.
-
-## Framework Integrations
-
-AgentMint works with any Python agent framework via hooks and callbacks — no SDK modification needed. Each integration produces Ed25519-signed, hash-chained receipts for every tool call.
-
-| Framework | Hook point | What it adds | Demo |
-|---|---|---|---|
-| **OpenAI Agents SDK** | `RunHooks` + tool-level signing | Receipts for tool calls + agent handoff chain-of-custody. Two signatures per receipt (notary + agent co-sign). | [examples/openai_agents_receipts_demo](examples/openai_agents_receipts_demo/) |
-| **CrewAI** | `@before_tool_call` decorator | Scoped delegation gate — out-of-scope calls blocked before execution. Denials signed too. | [examples/crewai_receipts_demo](examples/crewai_receipts_demo/) |
-| **Google ADK** | `before_tool_callback` / `after_tool_callback` | Deterministic receipt schema with policy evaluation. Addresses [adk-python#4502](https://github.com/google/adk-python/issues/4502). | Coming soon |
-
-**Integration guides:**
-
-- [AgentMint × OpenAI Agents SDK](docs/openai_agents_integration.md) — two agents, handoff tracking, receipt chain, addresses [#2643](https://github.com/openai/openai-agents-python/issues/2643)
-- [AgentMint × CrewAI](docs/crewai_integration.md) — scoped delegation, gated execution, denial receipts
-- [AgentMint × Google ADK](docs/google_adk_integration.md) — callback-based receipts, comparison with closed PR #4503
-
-The integration pattern is the same everywhere: ~20 lines of hook code, zero framework modification, receipts exported as `receipts.json` for independent verification.
+---
 
 ## Tests
 
@@ -194,16 +165,14 @@ The integration pattern is the same everywhere: ~20 lines of hook code, zero fra
 uv run pytest tests/ -v   # 184 passed in 12s
 ```
 
-## What it can't do
+## Limits
 
-[LIMITS.md](LIMITS.md) — 11 sections. Regex won't catch novel semantic attacks. Agent identity is asserted not proven. No behavioral baselines yet. Single-threaded. I'd rather document the boundaries than pretend they don't exist.
+[LIMITS.md](LIMITS.md) — 11 sections. Regex won't catch novel semantic attacks. Agent identity is asserted not proven. No behavioral baselines. Single-threaded. The boundaries are documented because they're real.
 
 ## Compliance
 
 Receipt fields map to SOC 2, NIST AI RMF, HIPAA §164.312, EU AI Act Article 12. See [COMPLIANCE.md](COMPLIANCE.md).
 
-## Status
+---
 
-184 tests. MIT license. Looking for anyone building agents that need scoped permissions over tools.
-
-[Open an issue](https://github.com/aniketh-maddipati/agentmint-python/issues) · [linkedin.com/in/anikethmaddipati](https://linkedin.com/in/anikethmaddipati)
+[Open an issue](https://github.com/aniketh-maddipati/agentmint-python/issues) · [agentmint.run](https://agentmint.run) · [linkedin.com/in/anikethmaddipati](https://linkedin.com/in/anikethmaddipati)
