@@ -2,7 +2,7 @@
 
 # AgentMint
 
-[![agentmint init demo](https://asciinema.org/a/eUlvELZ0CnUx2zRZ.svg)](https://asciinema.org/a/eUlvELZ0CnUx2zRZ)
+[![agentmint init demo](https://asciinema.org/a/pb7ToPso9m8RxVbw.svg)](https://asciinema.org/a/pb7ToPso9m8RxVbw)
 
 
 **Ship tool call enforcment to production in minutes with audit ready evidence (ISO, AIUC-1).**
@@ -111,11 +111,11 @@ breaker.check("my-agent").is_allowed  # True until threshold
 mint.notary.export_evidence(Path("./evidence"))
 # → plan.json, receipts/, public_key.pem, VERIFY.sh
 
-[![agentmint init demo](https://asciinema.org/a/eUlvELZ0CnUx2zRZ.svg)](https://asciinema.org/a/eUlvELZ0CnUx2zRZ)
+[![agentmint init demo](https://asciinema.org/a/pb7ToPso9m8RxVbw.svg)](https://asciinema.org/a/pb7ToPso9m8RxVbw)
 
 # Auditor runs: bash VERIFY.sh — pure openssl, zero vendor software
 
-[![agentmint init demo](https://asciinema.org/a/eUlvELZ0CnUx2zRZ.svg)](https://asciinema.org/a/eUlvELZ0CnUx2zRZ)
+[![agentmint init demo](https://asciinema.org/a/pb7ToPso9m8RxVbw.svg)](https://asciinema.org/a/pb7ToPso9m8RxVbw)
 
 ```
 
