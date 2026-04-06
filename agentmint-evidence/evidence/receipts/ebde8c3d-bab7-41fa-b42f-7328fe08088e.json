@@ -1,0 +1,47 @@
+{
+  "id": "ebde8c3d-bab7-41fa-b42f-7328fe08088e",
+  "type": "notarised_evidence",
+  "plan_id": "d16757d8-d724-4118-8109-b6ec66d43e67",
+  "agent": "clinical-ops",
+  "action": "ehr:read:patient",
+  "in_policy": true,
+  "policy_reason": "matched scope ehr:read:*",
+  "evidence_hash_sha512": "b3386f9fe573077c8848bd70ffc27df05a0b003b16910f295192c3e4e30f9459524e44f39804f440c0a6eed370e20c4fd0d5affbd05d9caf242f50e8044c53d0",
+  "evidence": {
+    "patient_id": "PT-20847",
+    "fields": [
+      "patient_id",
+      "name",
+      "dob",
+      "ssn_last4",
+      "diagnoses",
+      "medications",
+      "last_a1c",
+      "provider"
+    ]
+  },
+  "observed_at": "2026-04-06T18:15:42.507721+00:00",
+  "aiuc_controls": [
+    "E015",
+    "D003",
+    "B001"
+  ],
+  "key_id": "9f2d7e9153d9df29",
+  "agent_key_id": "",
+  "policy_hash": "9571938dd16046f81dbeaffa60a799e7c8abf00163611fb237eb519827fa13a9",
+  "session_id": "17540393-4095-446e-941b-cdf6b5bed134",
+  "session_trajectory": [
+    {
+      "action": "ehr:read:patient",
+      "agent": "clinical-ops",
+      "in_policy": true,
+      "observed_at": "2026-04-06T18:15:42.507721+00:00"
+    }
+  ],
+  "plan_signature": "c931d0c73f6b80959a04d381be18f3440a815aa4efe7f79ba1aa2b51fea8e799cba85e17f34ef3000b125c98594dbb09e91c806d21e928ffe1aa12fb12078802",
+  "signature": "63e7c18ff75599d114d2d9c317f2b308ee89448d55e1d9859da2e8307aece3ffafa0314c4afc1a505f4ec7122cd4143836e2bb1ade2958986b91ba9046d63507",
+  "timestamp": {
+    "tsa_url": "https://freetsa.org/tsr",
+    "digest_hex": "1b4508f1fcd17ce5deb06b1e14c536a8cf95cec9b2b0bce13a4bf12c93604d5c3b558cc41acc8606d758bc7577e8f7c76f0c0f1cd75ef6bb1365412d45c0e031"
+  }
+}

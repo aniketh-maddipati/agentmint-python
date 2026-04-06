@@ -1,0 +1,45 @@
+{
+  "id": "36bc818a-e461-4bfc-90d7-968f45240272",
+  "type": "notarised_evidence",
+  "plan_id": "d16757d8-d724-4118-8109-b6ec66d43e67",
+  "agent": "clinical-ops",
+  "action": "billing:charge:payment",
+  "in_policy": true,
+  "policy_reason": "matched scope billing:charge:*",
+  "evidence_hash_sha512": "3c0ac39f31f3f8e1fbfbac321084255eafbd0094ef0239304cfda0c99866fb28cc96262a2f9bed2a9d154d0830f00840a228c1956688e132aa13052ea8df65a5",
+  "evidence": {
+    "customer_id": "CUST-9182",
+    "amount": 284.5
+  },
+  "observed_at": "2026-04-06T18:15:42.822095+00:00",
+  "aiuc_controls": [
+    "E015",
+    "D003",
+    "B001"
+  ],
+  "key_id": "9f2d7e9153d9df29",
+  "agent_key_id": "",
+  "policy_hash": "9571938dd16046f81dbeaffa60a799e7c8abf00163611fb237eb519827fa13a9",
+  "session_id": "17540393-4095-446e-941b-cdf6b5bed134",
+  "session_trajectory": [
+    {
+      "action": "ehr:read:patient",
+      "agent": "clinical-ops",
+      "in_policy": true,
+      "observed_at": "2026-04-06T18:15:42.507721+00:00"
+    },
+    {
+      "action": "billing:charge:payment",
+      "agent": "clinical-ops",
+      "in_policy": true,
+      "observed_at": "2026-04-06T18:15:42.822095+00:00"
+    }
+  ],
+  "previous_receipt_hash": "20734e824ac147c6590deb0bc46012c68f04f2e6de1d6bc9703e5c2ab2d24f46",
+  "plan_signature": "c931d0c73f6b80959a04d381be18f3440a815aa4efe7f79ba1aa2b51fea8e799cba85e17f34ef3000b125c98594dbb09e91c806d21e928ffe1aa12fb12078802",
+  "signature": "6b5016d701e5bd8d456d37f5cb49b893314c872ea71f7682ad80ed2b4e222d41c50febb071acd8c9d1d6cf43b2193f1070550821c90cf16d893c4dd84627fa0b",
+  "timestamp": {
+    "tsa_url": "https://freetsa.org/tsr",
+    "digest_hex": "f3187615bfc9101d1c48203dc37513a9935ef5b8f2f07420ad71b13a4888a6fb3ed56f7bbfb4f4758dfa3173d97e5da10480f306f816b1016380dacc67eed739"
+  }
+}

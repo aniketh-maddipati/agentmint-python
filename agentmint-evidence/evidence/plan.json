@@ -1,0 +1,20 @@
+{
+  "id": "d16757d8-d724-4118-8109-b6ec66d43e67",
+  "type": "plan",
+  "user": "ops-lead@medcorp.com",
+  "action": "clinical-ops",
+  "scope": [
+    "ehr:read:*",
+    "billing:charge:*",
+    "notify:send:*",
+    "audit:query:*"
+  ],
+  "checkpoints": [],
+  "delegates_to": [
+    "clinical-ops"
+  ],
+  "issued_at": "2026-04-06T18:15:42.506838+00:00",
+  "expires_at": "2026-04-06T18:25:42.506838+00:00",
+  "key_id": "9f2d7e9153d9df29",
+  "signature": "c931d0c73f6b80959a04d381be18f3440a815aa4efe7f79ba1aa2b51fea8e799cba85e17f34ef3000b125c98594dbb09e91c806d21e928ffe1aa12fb12078802"
+}

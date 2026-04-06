@@ -1,0 +1,71 @@
+{
+  "package_created": "2026-04-06T18:15:44.337724+00:00",
+  "plan_id": "d16757d8-d724-4118-8109-b6ec66d43e67",
+  "plan_user": "ops-lead@medcorp.com",
+  "key_id": "9f2d7e9153d9df29",
+  "total_receipts": 4,
+  "in_policy_count": 3,
+  "out_of_policy_count": 1,
+  "aiuc_controls": [
+    "E015",
+    "D003",
+    "B001"
+  ],
+  "receipts": [
+    {
+      "receipt_id": "ebde8c3d-bab7-41fa-b42f-7328fe08088e",
+      "short_id": "ebde8c3d",
+      "action": "ehr:read:patient",
+      "agent": "clinical-ops",
+      "in_policy": true,
+      "policy_reason": "matched scope ehr:read:*",
+      "observed_at": "2026-04-06T18:15:42.507721+00:00",
+      "previous_receipt_hash": null,
+      "tsr_file": "receipts/ebde8c3d-bab7-41fa-b42f-7328fe08088e.tsr"
+    },
+    {
+      "receipt_id": "36bc818a-e461-4bfc-90d7-968f45240272",
+      "short_id": "36bc818a",
+      "action": "billing:charge:payment",
+      "agent": "clinical-ops",
+      "in_policy": true,
+      "policy_reason": "matched scope billing:charge:*",
+      "observed_at": "2026-04-06T18:15:42.822095+00:00",
+      "previous_receipt_hash": "20734e824ac147c6590deb0bc46012c68f04f2e6de1d6bc9703e5c2ab2d24f46",
+      "tsr_file": "receipts/36bc818a-e461-4bfc-90d7-968f45240272.tsr"
+    },
+    {
+      "receipt_id": "8bc74258-7905-4a47-aeb2-dd629736c35f",
+      "short_id": "8bc74258",
+      "action": "shield:blocked:notify:send:message",
+      "agent": "clinical-ops",
+      "in_policy": false,
+      "policy_reason": "no scope pattern matched",
+      "observed_at": "2026-04-06T18:15:43.132627+00:00",
+      "previous_receipt_hash": "ea80101e60c5e168e73ac9503f701b79508f22762b268707d22e2f1802557c06",
+      "tsr_file": "receipts/8bc74258-7905-4a47-aeb2-dd629736c35f.tsr"
+    },
+    {
+      "receipt_id": "46883077-ecec-4781-bdad-53d03558527e",
+      "short_id": "46883077",
+      "action": "audit:query:log",
+      "agent": "clinical-ops",
+      "in_policy": true,
+      "policy_reason": "matched scope audit:query:*",
+      "observed_at": "2026-04-06T18:15:43.439085+00:00",
+      "previous_receipt_hash": "9b28f81468a507783007ca468fb1546b11cf276411c0e735189bd99250c84c59",
+      "tsr_file": "receipts/46883077-ecec-4781-bdad-53d03558527e.tsr"
+    }
+  ],
+  "chain": {
+    "valid": true,
+    "length": 4,
+    "root_hash": "06b5939ff2d55684b302074d930bc96ee99932966e1b8b459067d18764265adb",
+    "root_signature": "3f94cfd7f3e89ea89b87415a49aaae4f9025c982eff11ca3cf5e0fdd117142dffd7574acd8dfdb2f6213bd1e6bc6356ecd37fb4e81741ea11e1378035a5a960b",
+    "root_timestamp": {
+      "tsa_url": "https://freetsa.org/tsr",
+      "tsq_file": "chain_root.tsq",
+      "tsr_file": "chain_root.tsr"
+    }
+  }
+}
