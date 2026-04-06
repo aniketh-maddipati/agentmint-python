@@ -2,7 +2,7 @@
 
 # AgentMint
 
-**Find every unprotected tool call in your AI agent codebase. Fix it in audit mode. Get a signed receipt.**
+**Know what your AI agents can do. Control what they actually do.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 ![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)
@@ -19,7 +19,7 @@ Python 3.10+ · Two dependencies (`pynacl`, `requests`) · No API keys · Works 
 
 ---
 
-## What happens when you run it
+## 30 seconds to visibility
 
 `agentmint init .` scans your Python codebase and finds every `@tool`, `ToolNode`, `Agent(tools=[...])`, `BaseTool`, `@function_tool`, and `@server.tool()` across LangGraph, CrewAI, OpenAI Agents SDK, and MCP.
 
@@ -56,44 +56,49 @@ Python 3.10+ · Two dependencies (`pynacl`, `requests`) · No API keys · Works 
 
   1. Run the quickstart to see your first receipt
   2. Add notary.notarise() to your tools
-  3. Run agentmint verify . in CI to stay covered
-  4. Hand the evidence package to your auditor
+  3. Tighten scopes as you go to production
+  4. Export evidence when compliance comes knocking
 ```
 
 Run with `--write` to generate `agentmint.yaml`, inject imports, and create `quickstart_agentmint.py` — a working script that produces your first Ed25519-signed receipt.
 
 ---
 
-## What this does for you
+## How it works
 
-AgentMint sits at the tool-call boundary of your AI agents. Every action — allowed or blocked — gets an Ed25519-signed receipt chained with SHA-256 hashes.
+AgentMint sits at the tool-call boundary of your AI agents. You start in audit mode — everything is logged, nothing is blocked. When you're ready, tighten permissions per agent, per tool, per scope.
 
-When you need to prove what your agents did, export the evidence:
+Every decision — allow or deny — gets an Ed25519-signed receipt, chained in order with SHA-256 hashes. You always have a complete record of what your agents did and why.
 
 ```python
-mint.notary.export_evidence(Path("./evidence"))
-# → plan.json, receipts/, public_key.pem, VERIFY.sh
+from agentmint import AgentMint
+
+mint = AgentMint(quiet=True)
+
+plan = mint.issue_plan(
+    action="financial-audit",
+    user="audit-agent@company.com",
+    scope=["read:ledger:*", "read:erp:*"],
+    delegates_to=["sox-agent"],
+    requires_checkpoint=["write:*"],
+)
+
+r1 = mint.delegate(plan, "sox-agent", "read:ledger:q4-journal-entries")
+print(r1.status.value)           # ok — read goes through
+print(r1.receipt.signature[:8])  # Ed25519 — signed proof this action was authorized
+
+r2 = mint.delegate(plan, "sox-agent", "write:erp:payment-record")
+print(r2.status.value)           # checkpoint_required — blocked before execution
+print(r2.needs_approval)         # True — agent never touches the record
 ```
 
-Your auditor runs `bash VERIFY.sh` with nothing but `openssl`. No AgentMint software. No vendor trust. No phone call.
-
 ---
 
-## Why this exists
-
-Every agent framework lets you build fast. None of them answer "what did your agent actually do last Tuesday, and can you prove it?"
-
-Guardrails AI validates prompts and outputs — no evidence at the tool-call boundary. Microsoft Agent Governance Toolkit enforces policy — for regulator-facing evidence, they point you to Microsoft Purview. CrowdStrike and Cisco enforce at the network layer — no cryptographic proof of individual agent actions.
-
-AgentMint enforces **and proves**. Signed receipts, chained in order, verifiable without vendor software. That's the part nobody else ships.
-
----
-
-## Core capabilities
+## What you get
 
 ### Scoped permissions
 
-Agents get exactly the authority they're issued. Child agents can't exceed parent scope. Delegation automatically narrows access.
+Agents get exactly the authority they're issued. Child agents can't exceed parent scope.
 
 ```python
 plan = mint.issue_plan(
@@ -135,6 +140,16 @@ breaker = CircuitBreaker(max_calls=100, window_seconds=60)
 breaker.check("my-agent").is_allowed  # True until threshold
 ```
 
+### Evidence export
+
+When you need to prove what happened, export a zip and hand it to your auditor. They verify with `openssl` alone — no AgentMint software required.
+
+```python
+mint.notary.export_evidence(Path("./evidence"))
+# → plan.json, receipts/, public_key.pem, VERIFY.sh
+# Auditor runs: bash VERIFY.sh — pure openssl, zero vendor software
+```
+
 ---
 
 ## Framework support
@@ -145,7 +160,7 @@ breaker.check("my-agent").is_allowed  # True until threshold
 |---|---|---|
 | **LangGraph** | `ToolNode`, `@tool` | Signed receipts on every tool invocation |
 | **OpenAI Agents SDK** | `@function_tool`, `RunHooks` | Receipts for tool calls + handoff chain-of-custody |
-| **CrewAI** | `BaseTool`, `@before_tool_call` | Scoped delegation gate — out-of-scope calls blocked before execution |
+| **CrewAI** | `BaseTool`, `@before_tool_call` | Scoped delegation gate — out-of-scope calls blocked |
 | **MCP** | `@server.tool()` | Framework-agnostic — works in Cursor, Claude Code, local dev |
 
 Integration guides: [OpenAI Agents SDK](docs/openai_agents_integration.md) · [CrewAI](docs/crewai_integration.md) · [Google ADK](docs/google_adk_integration.md)
@@ -154,7 +169,7 @@ Integration guides: [OpenAI Agents SDK](docs/openai_agents_integration.md) · [C
 
 ## Compliance
 
-Receipt fields map to SOC 2, NIST AI RMF, HIPAA §164.312, and EU AI Act Article 12. When you need certifications, the evidence is already there. See [COMPLIANCE.md](COMPLIANCE.md).
+Receipt fields map to SOC 2, NIST AI RMF, HIPAA §164.312, and EU AI Act Article 12. When certifications come up, the evidence is already there. See [COMPLIANCE.md](COMPLIANCE.md).
 
 ---
 
@@ -170,7 +185,7 @@ Boundaries are documented in [LIMITS.md](LIMITS.md) — 11 sections. Regex won't
 
 ## Who this is for
 
-Teams shipping AI agents that will eventually need to prove what those agents did. Start in audit mode now, tighten later, hand the evidence to your auditor when the time comes.
+Teams shipping AI agents who want to know what those agents are doing and control what they're allowed to do. Start in audit mode, tighten as you grow, export evidence when you need it.
 
 [Open an issue](https://github.com/aniketh-maddipati/agentmint-python/issues) · [Reach out](https://linkedin.com/in/anikethmaddipati)
 
