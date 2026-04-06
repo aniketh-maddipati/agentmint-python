@@ -2,7 +2,7 @@
 
 # AgentMint
 
-**Know what your AI agents can do. Control what they actually do.**
+**Ship tool call enforcment to production in minutes with audit ready evidence (ISO, AIUC-1).**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 ![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)
@@ -17,11 +17,7 @@ agentmint init .
 
 Python 3.10+ · Two dependencies (`pynacl`, `requests`) · No API keys · Works offline.
 
----
-
-## 30 seconds to visibility
-
-`agentmint init .` scans your Python codebase and finds every `@tool`, `ToolNode`, `Agent(tools=[...])`, `BaseTool`, `@function_tool`, and `@server.tool()` across LangGraph, CrewAI, OpenAI Agents SDK, and MCP.
+`agentmint init .` scans your Python codebase and finds every `@tool`, `ToolNode`, `Agent(tools=[...])`, `BaseTool`, `@function_tool`, and `@server.tool()` across LangGraph, CrewAI, OpenAI Agents SDK, and MCP — then tells you which ones can change things outside your app.
 
 ```
 ╭─ agentmint ──────────────────────────────────────────────────────╮
@@ -54,51 +50,21 @@ Python 3.10+ · Two dependencies (`pynacl`, `requests`) · No API keys · Works 
 
 ────────────────── Next up ──────────────────
 
-  1. Run the quickstart to see your first receipt
+  1. Run the quickstart to see your first signed receipt
   2. Add notary.notarise() to your tools
   3. Tighten scopes as you go to production
   4. Export evidence when compliance comes knocking
 ```
 
-Run with `--write` to generate `agentmint.yaml`, inject imports, and create `quickstart_agentmint.py` — a working script that produces your first Ed25519-signed receipt.
-
----
-
-## How it works
-
-AgentMint sits at the tool-call boundary of your AI agents. You start in audit mode — everything is logged, nothing is blocked. When you're ready, tighten permissions per agent, per tool, per scope.
-
-Every decision — allow or deny — gets an Ed25519-signed receipt, chained in order with SHA-256 hashes. You always have a complete record of what your agents did and why.
-
-```python
-from agentmint import AgentMint
-
-mint = AgentMint(quiet=True)
-
-plan = mint.issue_plan(
-    action="financial-audit",
-    user="audit-agent@company.com",
-    scope=["read:ledger:*", "read:erp:*"],
-    delegates_to=["sox-agent"],
-    requires_checkpoint=["write:*"],
-)
-
-r1 = mint.delegate(plan, "sox-agent", "read:ledger:q4-journal-entries")
-print(r1.status.value)           # ok — read goes through
-print(r1.receipt.signature[:8])  # Ed25519 — signed proof this action was authorized
-
-r2 = mint.delegate(plan, "sox-agent", "write:erp:payment-record")
-print(r2.status.value)           # checkpoint_required — blocked before execution
-print(r2.needs_approval)         # True — agent never touches the record
-```
+Run with `--write` to generate `agentmint.yaml`, inject imports, and create `quickstart_agentmint.py` that produces a real Ed25519-signed receipt when you run it.
 
 ---
 
 ## What you get
 
-### Scoped permissions
+**Audit mode by default.** Everything is logged, nothing is blocked. You see exactly what your agents are doing before you change anything. Tighten enforcement when you're ready.
 
-Agents get exactly the authority they're issued. Child agents can't exceed parent scope.
+**Scoped permissions.** Each agent gets exactly the authority you give it. Child agents can't exceed parent scope, and delegation automatically narrows access.
 
 ```python
 plan = mint.issue_plan(
@@ -113,9 +79,7 @@ mint.delegate(plan, "my-agent", "read:public:report.txt")       # ✓ allowed
 mint.delegate(plan, "my-agent", "read:secret:credentials.txt")  # ✗ blocked
 ```
 
-### Content scanning
-
-23 patterns across injection, secrets, PII, and encoding. Entropy detection. Zero network calls.
+**Content scanning.** 23 compiled patterns across injection, secrets, PII, and encoding attacks. Entropy detection for high-randomness strings. Zero network calls — everything runs locally.
 
 ```python
 from agentmint.shield import scan
@@ -129,9 +93,7 @@ print(result.blocked)       # True
 print(result.threat_count)  # 2 — injection + AWS key
 ```
 
-### Rate limiting
-
-Circuit breaker: `closed` → `half-open` (80%) → `open` (blocked). Cuts off runaway agents before they drain budget.
+**Rate limiting.** Circuit breaker with three states: `closed` → `half-open` at 80% threshold → `open` when the limit hits. Cuts off runaway agents before they drain your budget or hammer an API.
 
 ```python
 from agentmint.circuit_breaker import CircuitBreaker
@@ -140,9 +102,7 @@ breaker = CircuitBreaker(max_calls=100, window_seconds=60)
 breaker.check("my-agent").is_allowed  # True until threshold
 ```
 
-### Evidence export
-
-When you need to prove what happened, export a zip and hand it to your auditor. They verify with `openssl` alone — no AgentMint software required.
+**Signed receipts on everything.** Every allow and every deny gets an Ed25519 signature chained with SHA-256 hashes — a tamper-proof record of what your agents did and why each decision was made. When you need to prove what happened, export the evidence and hand it off:
 
 ```python
 mint.notary.export_evidence(Path("./evidence"))
@@ -154,14 +114,14 @@ mint.notary.export_evidence(Path("./evidence"))
 
 ## Framework support
 
-`agentmint init .` detects your framework automatically. ~20 lines of hook code to integrate. Zero SDK modification.
+`agentmint init .` detects your framework automatically. Integration takes about 20 lines of hook code with zero SDK modification.
 
 | Framework | What it finds | What it adds |
 |---|---|---|
 | **LangGraph** | `ToolNode`, `@tool` | Signed receipts on every tool invocation |
-| **OpenAI Agents SDK** | `@function_tool`, `RunHooks` | Receipts for tool calls + handoff chain-of-custody |
-| **CrewAI** | `BaseTool`, `@before_tool_call` | Scoped delegation gate — out-of-scope calls blocked |
-| **MCP** | `@server.tool()` | Framework-agnostic — works in Cursor, Claude Code, local dev |
+| **OpenAI Agents SDK** | `@function_tool`, `RunHooks` | Receipts + handoff chain-of-custody |
+| **CrewAI** | `BaseTool`, `@before_tool_call` | Scoped delegation — out-of-scope calls blocked |
+| **MCP** | `@server.tool()` | Framework-agnostic — Cursor, Claude Code, local dev |
 
 Integration guides: [OpenAI Agents SDK](docs/openai_agents_integration.md) · [CrewAI](docs/crewai_integration.md) · [Google ADK](docs/google_adk_integration.md)
 
@@ -179,13 +139,13 @@ Receipt fields map to SOC 2, NIST AI RMF, HIPAA §164.312, and EU AI Act Article
 uv run pytest tests/ -v   # 184 passed in 12s
 ```
 
-Boundaries are documented in [LIMITS.md](LIMITS.md) — 11 sections. Regex won't catch novel semantic attacks. Agent identity is asserted, not proven. I'd rather document the boundaries than pretend they don't exist.
+Boundaries documented in [LIMITS.md](LIMITS.md) — 11 sections covering what AgentMint doesn't do. Regex won't catch novel semantic attacks. Agent identity is asserted, not proven. I'd rather document the boundaries than pretend they don't exist.
 
 ---
 
 ## Who this is for
 
-Teams shipping AI agents who want to know what those agents are doing and control what they're allowed to do. Start in audit mode, tighten as you grow, export evidence when you need it.
+Teams shipping AI agents who want to control what those agents are allowed to do and have a signed record of what they actually did. Start in audit mode, tighten as you grow, export evidence when you need it.
 
 [Open an issue](https://github.com/aniketh-maddipati/agentmint-python/issues) · [Reach out](https://linkedin.com/in/anikethmaddipati)
 
