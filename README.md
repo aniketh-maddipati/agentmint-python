@@ -2,7 +2,9 @@
 
 # AgentMint
 
-**Every agent action — enforced, signed, and independently verifiable.**
+**Runtime enforcement and cryptographic compliance evidence for AI agent tool calls.**
+
+Every agent action — enforced, signed, and independently verifiable.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 ![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)
@@ -14,7 +16,7 @@
 pip install agentmint
 ```
 
-Two dependencies. No API keys. No config files. Works offline.
+Python 3.10+ · Two dependencies (`pynacl`, `requests`) · No API keys · Works offline.
 
 ---
 
@@ -37,7 +39,7 @@ plan = mint.issue_plan(
 
 r1 = mint.delegate(plan, "sox-agent", "read:ledger:q4-journal-entries")
 print(r1.status.value)           # ok — read goes through
-print(r1.receipt.signature[:8])  # c43eb4b7 — Ed25519 signed
+print(r1.receipt.signature[:8])  # Ed25519 — signed proof this action was authorized
 
 r2 = mint.delegate(plan, "sox-agent", "write:erp:payment-record")
 print(r2.status.value)           # checkpoint_required — blocked before execution
@@ -58,15 +60,15 @@ mint.notary.export_evidence(Path("./evidence"))
 
 Everyone enforces. AgentMint enforces **and proves**.
 
-Guardrails AI validates prompts and outputs — no evidence of what happened at the tool-call boundary. Microsoft Agents Toolkit enforces policy at the framework level — no portable signed receipt for each decision. CrowdStrike and Cisco enforce at the network layer — no cryptographic proof of individual agent actions.
+Guardrails AI validates prompts and outputs — no evidence of what happened at the tool-call boundary. Microsoft Agent Governance Toolkit enforces policy at the framework level — for regulator-facing evidence export, they point you to Microsoft Purview. CrowdStrike and Cisco enforce at the network layer — no cryptographic proof of individual agent actions.
 
 AgentMint produces a signed, chained, independently verifiable evidence trail for every allow and every deny. Ed25519 signatures. SHA-256 hash chain. An auditor runs `bash VERIFY.sh` with nothing but `openssl`. No vendor software. No trust dependency.
 
 ---
 
-## `agentmint init` — coming soon
+## `agentmint init`
 
-One command to scan your Python codebase, find every unprotected AI agent tool call across LangGraph, OpenAI Agents SDK, and CrewAI, and generate an `agentmint.yaml` policy file in audit mode. Deterministic static analysis via LibCST — no LLM required. Go from unprotected agent to scoped and auditable in a single command.
+CLI that scans your Python codebase, finds every unprotected AI agent tool call across LangGraph, OpenAI Agents SDK, and CrewAI, and generates an `agentmint.yaml` policy file in audit mode. Deterministic static analysis via LibCST — no LLM required. One command to go from unprotected agent to scoped and auditable. Shipping this week.
 
 ---
 
@@ -153,7 +155,7 @@ Boundaries are documented in [LIMITS.md](LIMITS.md) — 11 sections covering wha
 
 ---
 
-## Get involved
+## Who this is for
 
 Looking for agent builders shipping to regulated verticals. [Open an issue](https://github.com/aniketh-maddipati/agentmint-python/issues) or [reach out](https://linkedin.com/in/anikethmaddipati).
 
