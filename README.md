@@ -2,8 +2,6 @@
 
 # AgentMint
 
-[![agentmint init demo](https://asciinema.org/a/pb7ToPso9m8RxVbw.svg)](https://asciinema.org/a/pb7ToPso9m8RxVbw)
-
 
 **Ship tool call enforcment to production in minutes with audit ready evidence (ISO, AIUC-1).**
 
@@ -61,6 +59,8 @@ Python 3.10+ · Two dependencies (`pynacl`, `requests`) · No API keys · Works 
 
 Run with `--write` to generate `agentmint.yaml`, inject imports, and create `quickstart_agentmint.py` that produces a real Ed25519-signed receipt when you run it.
 
+### See it Live
+[![agentmint init demo](https://asciinema.org/a/pb7ToPso9m8RxVbw.svg)](https://asciinema.org/a/pb7ToPso9m8RxVbw)
 ---
 
 ## What you get
