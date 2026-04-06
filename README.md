@@ -2,6 +2,9 @@
 
 # AgentMint
 
+[![agentmint init demo](https://asciinema.org/a/eUlvELZ0CnUx2zRZ.svg)](https://asciinema.org/a/eUlvELZ0CnUx2zRZ)
+
+
 **Ship tool call enforcment to production in minutes with audit ready evidence (ISO, AIUC-1).**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
@@ -107,7 +110,13 @@ breaker.check("my-agent").is_allowed  # True until threshold
 ```python
 mint.notary.export_evidence(Path("./evidence"))
 # → plan.json, receipts/, public_key.pem, VERIFY.sh
+
+[![agentmint init demo](https://asciinema.org/a/eUlvELZ0CnUx2zRZ.svg)](https://asciinema.org/a/eUlvELZ0CnUx2zRZ)
+
 # Auditor runs: bash VERIFY.sh — pure openssl, zero vendor software
+
+[![agentmint init demo](https://asciinema.org/a/eUlvELZ0CnUx2zRZ.svg)](https://asciinema.org/a/eUlvELZ0CnUx2zRZ)
+
 ```
 
 ---
