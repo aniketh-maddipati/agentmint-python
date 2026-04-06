@@ -69,22 +69,31 @@ def init(directory: str, write: bool, output: str,
         return
 
     from .display import (print_scan_report, print_patch_instructions,
-                          print_yaml_preview, print_plan_scaffold)
-    from .patcher import generate_yaml
+                          print_yaml_preview, print_plan_scaffold,
+                          print_risk_summary, print_shield_check,
+                          print_quickstart_notice)
+    from .patcher import (generate_yaml, generate_quickstart,
+                          generate_shield_check)
 
     print_scan_report(candidates)
+    print_risk_summary(candidates)
     print_patch_instructions(candidates)
 
     yaml_content = generate_yaml(candidates)
     print_yaml_preview(yaml_content)
     print_plan_scaffold(candidates)
 
+    shield_snippet = generate_shield_check(candidates)
+    print_shield_check(shield_snippet)
+
     # ── Phase 3: APPLY ───────────────────────────────────────
     if write:
         _apply_patches(candidates, target, yaml_content)
     elif candidates:
-        _out("[dim]Run with [bold]--write[/bold] to generate agentmint.yaml.[/dim]\n",
-             "Run with --write to generate agentmint.yaml.\n")
+        from .display import print_next_steps
+        _out("  [dim]Run with [bold]--write[/bold] to generate config + quickstart.[/dim]\n",
+             "  Run with --write to generate config + quickstart.\n")
+        print_next_steps(has_quickstart=False)
 
 
 def _confirm_medium(candidates: list[ToolCandidate]) -> list[ToolCandidate]:
@@ -133,6 +142,15 @@ def _apply_patches(candidates: list[ToolCandidate], root: Path, yaml_content: st
     yaml_path = root / "agentmint.yaml"
     yaml_path.write_text(yaml_content, encoding="utf-8")
     print_status(True, "Generated agentmint.yaml")
+
+    # Generate quickstart.py
+    from .patcher import generate_quickstart
+    from .display import print_quickstart_notice
+    quickstart = generate_quickstart(candidates)
+    if quickstart:
+        qs_path = root / "quickstart_agentmint.py"
+        qs_path.write_text(quickstart, encoding="utf-8")
+        print_quickstart_notice(str(qs_path.relative_to(root)))
 
     n = sum(len(v) for v in by_file.values())
     _out(f"\n  [bold]{n} tools[/bold] ready for enforcement. "
