@@ -69,7 +69,7 @@ class ToolCandidate:
 
     file: str
     line: int
-    framework: str          # langgraph | openai-sdk | crewai | adk | raw
+    framework: str          # langgraph | openai-sdk | crewai | mcp | adk | raw
     symbol: str             # function or class name
     boundary: str           # "definition" or "registration"
     operation_guess: str = ""

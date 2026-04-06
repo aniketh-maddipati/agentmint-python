@@ -24,6 +24,7 @@ CONFIDENCE_COLORS = {"high": "green", "medium": "yellow", "low": "red"}
 FRAMEWORK_COLORS = {
     "langgraph": "cyan", "openai-sdk": "magenta",
     "crewai": "blue", "adk": "green", "raw": "dim",
+    "mcp": "bright_cyan",
 }
 
 
@@ -158,3 +159,67 @@ def print_status(ok: bool, message: str) -> None:
         _out(f"  [green]✓[/green] {message}", f"  ✓ {message}")
     else:
         _out(f"  [red]✗[/red] {message}", f"  ✗ {message}")
+
+
+def print_risk_summary(candidates: List[ToolCandidate]) -> None:
+    """Print a risk-grouped summary for large codebases.
+    Shows what needs attention vs what's safe."""
+    if not candidates:
+        return
+
+    write_ops = [c for c in candidates if c.operation_guess in ("write", "delete", "exec")]
+    read_ops = [c for c in candidates if c.operation_guess == "read"]
+    other = [c for c in candidates if c.operation_guess not in ("write", "delete", "exec", "read")]
+    low_conf = [c for c in candidates if c.confidence == "low"]
+
+    if _CONSOLE:
+        from rich.rule import Rule
+        _CONSOLE.print(Rule("[bold]Risk Summary[/bold]", style="bright_blue"))
+        _CONSOLE.print()
+
+    if write_ops:
+        _out(f"  [red]⚠ {len(write_ops)} write/delete/exec tools — review these first:[/red]",
+             f"  ⚠ {len(write_ops)} write/delete/exec tools — review these first:")
+        for c in write_ops:
+            _out(f"    [bold]{c.symbol}[/bold]  ({c.framework}, {c.file}:{c.line})",
+                 f"    {c.symbol}  ({c.framework}, {c.file}:{c.line})")
+        _out("", "")
+
+    if read_ops:
+        _out(f"  [green]✓ {len(read_ops)} read-only tools — safe defaults applied[/green]",
+             f"  ✓ {len(read_ops)} read-only tools — safe defaults applied")
+        _out("", "")
+
+    if other:
+        _out(f"  [yellow]? {len(other)} tools with unknown operation — review recommended[/yellow]",
+             f"  ? {len(other)} tools with unknown operation — review recommended")
+        _out("", "")
+
+    if low_conf:
+        _out(f"  [dim]↳ {len(low_conf)} low-confidence matches skipped from yaml[/dim]",
+             f"  ↳ {len(low_conf)} low-confidence matches skipped from yaml")
+        _out("", "")
+
+
+def print_shield_check(shield_snippet: str) -> None:
+    """Print the Shield dry-run snippet."""
+    if not shield_snippet:
+        return
+
+    if _CONSOLE:
+        from rich.rule import Rule
+        from rich.syntax import Syntax
+        _CONSOLE.print(Rule("[bold]Try Shield (paste into Python shell)[/bold]", style="bright_blue"))
+        _CONSOLE.print()
+        _CONSOLE.print(Syntax(shield_snippet, "python", theme="monokai", line_numbers=False))
+        _CONSOLE.print()
+    else:
+        print("── Try Shield ──\n")
+        print(shield_snippet)
+
+
+def print_quickstart_notice(path: str) -> None:
+    """Tell the developer about the generated quickstart."""
+    _out(f"  [green]✓[/green] Generated [bold]{path}[/bold] — run it to see your first receipt",
+         f"  ✓ Generated {path} — run it to see your first receipt")
+
