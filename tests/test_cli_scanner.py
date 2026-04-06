@@ -256,15 +256,23 @@ class TestYAML:
         assert parsed["version"] == 1
         assert parsed["mode"] == "audit"
         assert "search_docs" in parsed["tools"]
-        assert parsed["tools"]["search_docs"]["mode"] == "audit"
+        assert parsed["tools"]["search_docs"]["scope"] == "tool:search_docs"
+        assert parsed["tools"]["search_docs"]["framework"] == "langgraph"
 
-    def test_write_ops_get_tighter_limits(self):
+    def test_yaml_contains_only_facts(self):
+        """YAML should contain provable facts, no heuristic guesses."""
         import yaml
         candidates = scan_file("langgraph_agent.py", load("langgraph_agent.py"))
         content = generate_yaml(candidates)
         parsed = yaml.safe_load(content)
-        assert parsed["tools"]["delete_old_index"]["rate_limit"] == "10/min"
-        assert parsed["tools"]["search_docs"]["rate_limit"] == "100/min"
+        for name, tool in parsed["tools"].items():
+            # Every tool has scope, framework, file, line — all facts
+            assert "scope" in tool
+            assert "framework" in tool
+            assert "file" in tool
+            assert "line" in tool
+            # No rate_limit guesses in v0
+            assert "rate_limit" not in tool
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -475,9 +483,8 @@ class TestEndToEnd:
         yaml_symbols = set(parsed["tools"].keys())
         assert expected_symbols <= yaml_symbols
 
-        # All tools should be in audit mode
-        for tool_name, tool_cfg in parsed["tools"].items():
-            assert tool_cfg["mode"] == "audit"
+        # Global mode should be audit
+        assert parsed["mode"] == "audit"
 
     def test_write_produces_working_import(self):
         """After --write, the injected import should be usable."""
@@ -518,3 +525,41 @@ class TestEndToEnd:
             evidence={"tool": "save_results"},
         )
         assert not receipt.in_policy
+
+
+class TestQuickstart:
+    def test_generates_runnable_quickstart(self):
+        from agentmint.cli.patcher import generate_quickstart
+        import ast
+        candidates = scan_file("langgraph_agent.py", load("langgraph_agent.py"))
+        script = generate_quickstart(candidates)
+        assert script != ""
+        ast.parse(script)  # must be valid python
+
+    def test_quickstart_references_real_tool(self):
+        from agentmint.cli.patcher import generate_quickstart
+        candidates = scan_file("langgraph_agent.py", load("langgraph_agent.py"))
+        script = generate_quickstart(candidates)
+        # Should reference an actual tool from the scan
+        assert any(c.symbol in script for c in candidates
+                   if not c.symbol.startswith("<"))
+
+    def test_quickstart_contains_notary(self):
+        from agentmint.cli.patcher import generate_quickstart
+        candidates = scan_file("langgraph_agent.py", load("langgraph_agent.py"))
+        script = generate_quickstart(candidates)
+        assert "Notary()" in script
+        assert "notarise" in script
+        assert "verify_receipt" in script or "verify" in script
+
+    def test_shield_check_generated(self):
+        from agentmint.cli.patcher import generate_shield_check
+        candidates = scan_file("langgraph_agent.py", load("langgraph_agent.py"))
+        snippet = generate_shield_check(candidates)
+        assert "from agentmint.shield import scan" in snippet
+        assert "search_docs" in snippet
+
+    def test_empty_candidates_no_quickstart(self):
+        from agentmint.cli.patcher import generate_quickstart
+        assert generate_quickstart([]) == ""
+

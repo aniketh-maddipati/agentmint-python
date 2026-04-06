@@ -2,9 +2,7 @@
 
 # AgentMint
 
-**Runtime enforcement and cryptographic compliance evidence for AI agent tool calls.**
-
-Every agent action — enforced, signed, and independently verifiable.
+**Find every unprotected tool call in your AI agent codebase. Fix it in audit mode. Get a signed receipt.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 ![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)
@@ -14,61 +12,80 @@ Every agent action — enforced, signed, and independently verifiable.
 
 ```bash
 pip install agentmint
+agentmint init .
 ```
 
 Python 3.10+ · Two dependencies (`pynacl`, `requests`) · No API keys · Works offline.
 
 ---
 
-## See it work
+## What happens when you run it
 
-An agent tries to read a ledger (allowed) and write a payment record (blocked). Both decisions get an Ed25519-signed receipt.
+`agentmint init .` scans your Python codebase and finds every `@tool`, `ToolNode`, `Agent(tools=[...])`, `BaseTool`, `@function_tool`, and `@server.tool()` across LangGraph, CrewAI, OpenAI Agents SDK, and MCP.
 
-```python
-from agentmint import AgentMint
+```
+╭─ agentmint ──────────────────────────────────────────────────────╮
+│  Found 21 tool calls across 6 files — 3 need a closer look.     │
+╰──────────────────────────────────────────────────────────────────╯
 
-mint = AgentMint(quiet=True)
+  crewai_aws.py
+    ●  S3ReaderTool:33  crewai  BaseTool subclass
+    ●  gate:176         crewai  @before_tool_call (gate)
 
-plan = mint.issue_plan(
-    action="financial-audit",
-    user="audit-agent@company.com",
-    scope=["read:ledger:*", "read:erp:*"],
-    delegates_to=["sox-agent"],
-    requires_checkpoint=["write:*"],
-)
+  openai_agents_receipts_demo/demo_open_ai_receipts.py
+    ●  get_weather:95       openai  @function_tool
+    ●  send_notification:121 openai  @function_tool
 
-r1 = mint.delegate(plan, "sox-agent", "read:ledger:q4-journal-entries")
-print(r1.status.value)           # ok — read goes through
-print(r1.receipt.signature[:8])  # Ed25519 — signed proof this action was authorized
+────────────────── Heads up ──────────────────
 
-r2 = mint.delegate(plan, "sox-agent", "write:erp:payment-record")
-print(r2.status.value)           # checkpoint_required — blocked before execution
-print(r2.needs_approval)         # True — agent never touches the record
+  These 3 tools can change things outside your app:
+    → write_file  mcp_real_demo.py:143
+    → send_notification  demo_open_ai_receipts.py:121
+  They'll start in audit mode (log only). Tighten later when you're ready.
+
+  ✓ 7 read-only tools — safe defaults applied.
+
+────────────────── What to add ──────────────────
+
+  crewai_aws.py
+  Add at top → from agentmint.notary import Notary
+    S3ReaderTool → notary.notarise(action="tool:S3ReaderTool", ...)
+    gate → notary.notarise(action="hook:before_tool_call", ...)
+
+────────────────── Next up ──────────────────
+
+  1. Run the quickstart to see your first receipt
+  2. Add notary.notarise() to your tools
+  3. Run agentmint verify . in CI to stay covered
+  4. Hand the evidence package to your auditor
 ```
 
-The write never executes. The auditor doesn't need AgentMint to verify — just `openssl`:
+Run with `--write` to generate `agentmint.yaml`, inject imports, and create `quickstart_agentmint.py` — a working script that produces your first Ed25519-signed receipt.
+
+---
+
+## What this does for you
+
+AgentMint sits at the tool-call boundary of your AI agents. Every action — allowed or blocked — gets an Ed25519-signed receipt chained with SHA-256 hashes.
+
+When you need to prove what your agents did, export the evidence:
 
 ```python
 mint.notary.export_evidence(Path("./evidence"))
 # → plan.json, receipts/, public_key.pem, VERIFY.sh
-# Auditor runs: bash VERIFY.sh — pure openssl, zero vendor software
 ```
 
----
-
-## What makes AgentMint different
-
-Everyone enforces. AgentMint enforces **and proves**.
-
-Guardrails AI validates prompts and outputs — no evidence of what happened at the tool-call boundary. Microsoft Agent Governance Toolkit enforces policy at the framework level — for regulator-facing evidence export, they point you to Microsoft Purview. CrowdStrike and Cisco enforce at the network layer — no cryptographic proof of individual agent actions.
-
-AgentMint produces a signed, chained, independently verifiable evidence trail for every allow and every deny. Ed25519 signatures. SHA-256 hash chain. An auditor runs `bash VERIFY.sh` with nothing but `openssl`. No vendor software. No trust dependency.
+Your auditor runs `bash VERIFY.sh` with nothing but `openssl`. No AgentMint software. No vendor trust. No phone call.
 
 ---
 
-## `agentmint init`
+## Why this exists
 
-CLI that scans your Python codebase, finds every unprotected AI agent tool call across LangGraph, OpenAI Agents SDK, and CrewAI, and generates an `agentmint.yaml` policy file in audit mode. Deterministic static analysis via LibCST — no LLM required. One command to go from unprotected agent to scoped and auditable. Shipping this week.
+Every agent framework lets you build fast. None of them answer "what did your agent actually do last Tuesday, and can you prove it?"
+
+Guardrails AI validates prompts and outputs — no evidence at the tool-call boundary. Microsoft Agent Governance Toolkit enforces policy — for regulator-facing evidence, they point you to Microsoft Purview. CrowdStrike and Cisco enforce at the network layer — no cryptographic proof of individual agent actions.
+
+AgentMint enforces **and proves**. Signed receipts, chained in order, verifiable without vendor software. That's the part nobody else ships.
 
 ---
 
@@ -76,7 +93,7 @@ CLI that scans your Python codebase, finds every unprotected AI agent tool call 
 
 ### Scoped permissions
 
-Agents get exactly the authority they're issued. Child agents can't exceed parent scope.
+Agents get exactly the authority they're issued. Child agents can't exceed parent scope. Delegation automatically narrows access.
 
 ```python
 plan = mint.issue_plan(
@@ -93,7 +110,7 @@ mint.delegate(plan, "my-agent", "read:secret:credentials.txt")  # ✗ blocked
 
 ### Content scanning
 
-23 patterns across injection, secrets, PII, and encoding. Entropy detection. Zero network calls. One line before any tool call:
+23 patterns across injection, secrets, PII, and encoding. Entropy detection. Zero network calls.
 
 ```python
 from agentmint.shield import scan
@@ -109,7 +126,7 @@ print(result.threat_count)  # 2 — injection + AWS key
 
 ### Rate limiting
 
-Circuit breaker with three states: `closed` → `half-open` (80% threshold) → `open` (blocked). Cuts off runaway agents before they drain budget.
+Circuit breaker: `closed` → `half-open` (80%) → `open` (blocked). Cuts off runaway agents before they drain budget.
 
 ```python
 from agentmint.circuit_breaker import CircuitBreaker
@@ -118,30 +135,26 @@ breaker = CircuitBreaker(max_calls=100, window_seconds=60)
 breaker.check("my-agent").is_allowed  # True until threshold
 ```
 
-### Signed audit trail
-
-Ed25519 on every decision. SHA-256 hash chain links receipts in order. Export a zip — `plan.json`, `receipts/`, `public_key.pem`, `VERIFY.sh` — and hand it to your auditor. They verify with `openssl` alone.
-
 ---
 
-## Framework integrations
+## Framework support
 
-~20 lines of hook code per framework. Zero SDK modification.
+`agentmint init .` detects your framework automatically. ~20 lines of hook code to integrate. Zero SDK modification.
 
-| Framework | Hook point | What it adds |
+| Framework | What it finds | What it adds |
 |---|---|---|
-| **OpenAI Agents SDK** | `RunHooks` + tool-level signing | Receipts for tool calls + handoff chain-of-custody |
-| **CrewAI** | `@before_tool_call` | Scoped delegation gate — out-of-scope calls blocked before execution |
-| **Google ADK** | `before/after_tool_callback` | Deterministic receipt schema with policy evaluation |
-| **MCP / raw API** | Wrap any tool call | Framework-agnostic — works in Cursor, Claude Code, local dev |
+| **LangGraph** | `ToolNode`, `@tool` | Signed receipts on every tool invocation |
+| **OpenAI Agents SDK** | `@function_tool`, `RunHooks` | Receipts for tool calls + handoff chain-of-custody |
+| **CrewAI** | `BaseTool`, `@before_tool_call` | Scoped delegation gate — out-of-scope calls blocked before execution |
+| **MCP** | `@server.tool()` | Framework-agnostic — works in Cursor, Claude Code, local dev |
 
 Integration guides: [OpenAI Agents SDK](docs/openai_agents_integration.md) · [CrewAI](docs/crewai_integration.md) · [Google ADK](docs/google_adk_integration.md)
 
 ---
 
-## Compliance mapping
+## Compliance
 
-Receipt fields map to SOC 2, NIST AI RMF, HIPAA §164.312, and EU AI Act Article 12. See [COMPLIANCE.md](COMPLIANCE.md).
+Receipt fields map to SOC 2, NIST AI RMF, HIPAA §164.312, and EU AI Act Article 12. When you need certifications, the evidence is already there. See [COMPLIANCE.md](COMPLIANCE.md).
 
 ---
 
@@ -151,12 +164,14 @@ Receipt fields map to SOC 2, NIST AI RMF, HIPAA §164.312, and EU AI Act Article
 uv run pytest tests/ -v   # 184 passed in 12s
 ```
 
-Boundaries are documented in [LIMITS.md](LIMITS.md) — 11 sections covering what AgentMint doesn't do. Regex won't catch novel semantic attacks. Agent identity is asserted, not proven. I'd rather document the boundaries than pretend they don't exist.
+Boundaries are documented in [LIMITS.md](LIMITS.md) — 11 sections. Regex won't catch novel semantic attacks. Agent identity is asserted, not proven. I'd rather document the boundaries than pretend they don't exist.
 
 ---
 
 ## Who this is for
 
-Looking for agent builders shipping to regulated verticals. [Open an issue](https://github.com/aniketh-maddipati/agentmint-python/issues) or [reach out](https://linkedin.com/in/anikethmaddipati).
+Teams shipping AI agents that will eventually need to prove what those agents did. Start in audit mode now, tighten later, hand the evidence to your auditor when the time comes.
+
+[Open an issue](https://github.com/aniketh-maddipati/agentmint-python/issues) · [Reach out](https://linkedin.com/in/anikethmaddipati)
 
 Listed in the [OWASP Agentic Skills Top 10](https://github.com/OWASP/www-project-agentic-skills-top-10/blob/main/solutions.md) solutions catalog.

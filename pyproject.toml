@@ -22,12 +22,21 @@ dependencies = [
 
 [project.optional-dependencies]
 anthropic = ["anthropic>=0.85.0"]
-dev = ["pytest>=7.0.0"]
+dev = ["pytest>=7.0.0", "libcst>=1.0"]
+cli = [
+    "click>=8.0",
+    "libcst>=1.0",
+    "rich>=13.0",
+    "pyyaml>=6.0",
+]
 demos = [
     "elevenlabs>=2.38.0",
     "rich>=14.3.3",
     "python-dotenv>=1.2.2",
 ]
+
+[project.scripts]
+agentmint = "agentmint.cli.main:main"
 
 [project.urls]
 Homepage = "https://github.com/aniketh-maddipati/agentmint-python"
