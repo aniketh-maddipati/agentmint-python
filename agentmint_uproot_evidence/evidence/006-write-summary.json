@@ -1,0 +1,69 @@
+{
+  "id": "538feb54-441c-4bfa-9698-0e7b1dbba081",
+  "type": "notarised_evidence",
+  "plan_id": "5dd2fae3-4f3b-4905-b6a7-1f499335e399",
+  "agent": "claude-sonnet-4-6",
+  "action": "write:summary:2026-04-03",
+  "in_policy": true,
+  "policy_reason": "matched scope write:summary:*",
+  "evidence_hash_sha512": "a01340be2e52264989e1f55a3046b9030c7a93dbbef310bf9ca1aacac5851859041a7b24b17281cccc200a897d7d1472f84a5292ff6f4a55e64bdb285e4fb2b6",
+  "evidence": {
+    "tool": "write_summary",
+    "args": {
+      "batch_date": "2026-04-03",
+      "claims_processed": 1
+    }
+  },
+  "observed_at": "2026-04-05T13:34:04.144812+00:00",
+  "aiuc_controls": [
+    "E015",
+    "D003",
+    "B001"
+  ],
+  "key_id": "b462690d39bdd6bc",
+  "agent_key_id": "",
+  "policy_hash": "c4ed66790066845e0341778d1890215e6212cbf4aff219316a58de86c112bfa9",
+  "output_hash": "536c7e96e81843f46cdbcd595c41d838ac9de84dec86a1c037bc4d59411967ce",
+  "session_id": "62df737e-4b3a-4841-87f2-76a3cc57d871",
+  "session_trajectory": [
+    {
+      "action": "check:insurance:BCBS-IL-98301",
+      "agent": "claude-sonnet-4-6",
+      "in_policy": true,
+      "observed_at": "2026-04-05T13:33:53.800984+00:00"
+    },
+    {
+      "action": "submit:claim:CLM-9920",
+      "agent": "claude-sonnet-4-6",
+      "in_policy": true,
+      "observed_at": "2026-04-05T13:33:56.536348+00:00"
+    },
+    {
+      "action": "appeal:claim:CLM-9920",
+      "agent": "claude-sonnet-4-6",
+      "in_policy": false,
+      "observed_at": "2026-04-05T13:34:01.833330+00:00"
+    },
+    {
+      "action": "appeal:claim:CLM-9920",
+      "agent": "claude-sonnet-4-6",
+      "in_policy": true,
+      "observed_at": "2026-04-05T13:34:04.143388+00:00"
+    },
+    {
+      "action": "write:summary:2026-04-03",
+      "agent": "claude-sonnet-4-6",
+      "in_policy": true,
+      "observed_at": "2026-04-05T13:34:04.144812+00:00"
+    }
+  ],
+  "reasoning_hash": "021ebdfc268980b39819e64bfafff888d422e01813b514b4d15ff52e3d1ecf9f",
+  "previous_receipt_hash": "e955a20a3b27336aade2c6b2e19b9498c40d996dc7321ff19d1224bec3174696",
+  "plan_signature": "21b60330649327be83d0215b5232794d977a579d927a499a5c1dbed682bfe13bc2c1929d8be1a2bd05351fbf2fa7ba392e721ac84117bebb62e0a8701c0fc102",
+  "signature": "673b6541443b97233a9db76aa0765271d0e9e4f727e3c2dd81896ffa7159fe50830e5d5aa9f62de7ba0ce0f334faadb9a867c58fe8752c963577931a11916109",
+  "output": {
+    "note_id": "NOTE-2026-04-03-001",
+    "word_count": 247,
+    "status": "saved"
+  }
+}

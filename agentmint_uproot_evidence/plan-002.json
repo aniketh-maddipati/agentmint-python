@@ -1,0 +1,18 @@
+{
+  "id": "e7f0b0c3-7f20-46ea-96b3-f9a3b8ff28b1",
+  "type": "plan",
+  "user": "claims-supervisor@clinic.example.com",
+  "action": "appeal-authorization-CLM-9920",
+  "scope": [
+    "appeal:claim:CLM-9920"
+  ],
+  "checkpoints": [],
+  "delegates_to": [
+    "claude-sonnet-4-6"
+  ],
+  "issued_at": "2026-04-05T13:34:01.834488+00:00",
+  "expires_at": "2026-04-05T14:04:01.834488+00:00",
+  "key_id": "b462690d39bdd6bc",
+  "signature": "3d6763edd1ce402c41edebd56327b4c1fbc51321a455516d4a8f15ade3287f5254b18b7f834d47f57088d5b12ba8c9ba320c604d685c3e0ad58f4cb4307bae0e",
+  "parent_plan_id": "5dd2fae3-4f3b-4905-b6a7-1f499335e399"
+}
