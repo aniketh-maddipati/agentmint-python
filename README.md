@@ -3,7 +3,7 @@
 # AgentMint
 
 
-**Ship tool call enforcment to production in minutes.**
+**Ship agent runtime enforcment to production in minutes.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 ![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)
