@@ -1,0 +1,44 @@
+{
+  "id": "9ee4aed5-43c1-47f1-bc1e-2b3e6e4a91fb",
+  "type": "notarised_evidence",
+  "plan_id": "5dd2fae3-4f3b-4905-b6a7-1f499335e399",
+  "agent": "claude-sonnet-4-6",
+  "action": "read:patient:PT-4821",
+  "in_policy": true,
+  "policy_reason": "matched scope read:patient:*",
+  "evidence_hash_sha512": "164711fa59d893092cf78cfa5d59a76c1679ac76c6ccf290402da2bba4ba10003f069fd23113298583e90f83d047a90e7625374d79b43b6891a5b8ee78f39654",
+  "evidence": {
+    "tool": "read_patient",
+    "args": {
+      "patient_id": "PT-4821"
+    }
+  },
+  "observed_at": "2026-04-05T13:33:50.631728+00:00",
+  "aiuc_controls": [
+    "E015",
+    "D003",
+    "B001"
+  ],
+  "key_id": "b462690d39bdd6bc",
+  "agent_key_id": "",
+  "policy_hash": "c4ed66790066845e0341778d1890215e6212cbf4aff219316a58de86c112bfa9",
+  "output_hash": "c6c3a80fa34640dc3f8d7c32d6be072dd71f126e9e5f498c8c087b35aaed3d3b",
+  "session_id": "62df737e-4b3a-4841-87f2-76a3cc57d871",
+  "session_trajectory": [
+    {
+      "action": "read:patient:PT-4821",
+      "agent": "claude-sonnet-4-6",
+      "in_policy": true,
+      "observed_at": "2026-04-05T13:33:50.631728+00:00"
+    }
+  ],
+  "reasoning_hash": "aa002b2ff9463ea90864fc7e3bfecc1fb8464d2f8a2ef04a2e39541659adf6bc",
+  "plan_signature": "21b60330649327be83d0215b5232794d977a579d927a499a5c1dbed682bfe13bc2c1929d8be1a2bd05351fbf2fa7ba392e721ac84117bebb62e0a8701c0fc102",
+  "signature": "e2fc2ba7d5d7e77c9dd69cd6ad0f3e0f696a2268fc1160292004604716863737fb627234c01417ac6fb61c0346ac04f25cb60df8bab9be6d46da6f79175f3b0a",
+  "output": {
+    "patient_id": "PT-4821",
+    "name": "Margaret Chen",
+    "dob": "1958-03-14",
+    "insurance_id": "BCBS-IL-98301"
+  }
+}
