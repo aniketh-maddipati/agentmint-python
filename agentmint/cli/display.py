@@ -295,7 +295,7 @@ def print_full_report(candidates: List[ToolCandidate]) -> None:
     print()
 
     # ── Phase 4: SUMMARY ──────────────────────────────
-    print(f"  {'\u2500' * 52}")
+    print('  ' + '─' * 52)
     print()
     print(f"  {n_tools} tools found across {n_files} files")
     print()

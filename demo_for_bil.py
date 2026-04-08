@@ -757,28 +757,34 @@ def section_inspection_guide():
 
   Evidence package:   self-contained zip, offline verification, 30-min audit
 
-  Shield:             21 regex patterns today — PII, secrets, injection, encoding
+  Shield:             25 regex patterns — PII, secrets, injection, encoding, structural
                       output scanning is unique — no other framework does this
                       {Y}honest gaps: non-English injection, semantic attacks, base64{X}
 
   OTVP:               receipt.evidence.infrastructure_trust.assessment_hash
                       same Ed25519, same SHA-256, same SPKI PEM, same RFC 3161
 
-  {B}What I'm building this week:{X}
+  {B}Shipped today:{X}
 
-  1. verify_all.py    — single command replaces VERIFY.sh + verify_sigs.py
-                        workpaper-ready output, exception-first, one verdict
-                        auditors asked for this — they don't want two scripts
+  1. verify_all.py    — single command, workpaper-ready, exception-first
+                        replaces VERIFY.sh + verify_sigs.py
+                        now bundled into every evidence package
 
-  2. NHI Authority    — guided questionnaire mode (Mode B)
+  2. Shield 22→25     — system_role_tag promoted to block
+     patterns           + markdown image exfil, output instruction,
+                        bulk PII request, homoglyph detection
+
+  {B}Building this week:{X}
+
+  1. NHI Authority    — guided questionnaire mode (Mode B)
      Mode B             "which agents touch production?" "max $ per action?"
                         answers → plan JSON → ops lead reviews and signs
 
-  3. Shield → 30      — promote system_role_tag to block, add markdown image
-     patterns           exfil, non-ASCII normalization (rogue_agent_demo gaps)
-
-  4. agentmint init   — outputs draft plan.json alongside scan report
+  2. agentmint init   — outputs draft plan.json alongside scan report
      → plan draft       ops lead reviews the plan, signs it, that's the authority
+
+  3. Shield → 30+     — non-ASCII normalization before scan,
+     patterns           base64 decode-and-rescan, URL extraction from markdown
 
   {B}What I want your feedback on:{X}
     - Does the plan receipt model map to how you've seen NHI governance work?

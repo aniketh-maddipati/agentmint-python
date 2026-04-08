@@ -127,12 +127,29 @@ _RAW: list[tuple[str, str, str, str]] = [
      r"(?:%[0-9A-Fa-f]{2}){4,}"),
 
     # Structural injection — instruction-like content in data
-    ("system_role_tag", "structural", "warn",
+    ("system_role_tag", "structural", "block",
      r"(?i)<\|?(?:im_start|system|assistant|user)\|?>"),
     ("html_injection", "structural", "warn",
      r"(?i)<(?:script|iframe|object|embed|form|img\s+[^>]*onerror)[^>]*>"),
     ("markdown_link_injection", "structural", "warn",
      r"!\[.*?\]\((?:javascript|data|vbscript):"),
+
+    # Markdown image data exfiltration — image URL smuggles PII
+    ("markdown_image_exfil", "structural", "block",
+     r"!\[.*?\]\(https?://[^\s)]*(?:ssn|password|secret|token|key|credit)[^\s)]*\)"),
+
+    # Tool output containing instruction-like preamble
+    ("output_instruction", "injection", "warn",
+     r"(?i)(?:IMPORTANT|URGENT|NOTE|UPDATE)\s*:\s*(?:ignore|forget|override|send|forward)"),
+
+    # Bulk PII request in output — social engineering via tool response
+    ("bulk_pii_request", "injection", "warn",
+     r"(?i)(?:include|provide|output|list)\s+(?:all\s+)?(?:customer|user|patient|employee)\s+"
+     r"(?:data|details|records|information|accounts|names|emails|numbers)"),
+
+    # Non-ASCII lookalike in Latin context (Cyrillic substitution)
+    ("homoglyph_latin_mix", "encoding", "warn",
+     r"[Ѐ-ӿ][ -~]{2,}[Ѐ-ӿ]"),
 ]
 
 DEFAULT_PATTERNS: list[tuple[str, str, str, re.Pattern]] = [
