@@ -225,9 +225,8 @@ def section_nhi_authority(notary, candidates):
   {B}Verification:{X}
     plan_valid = notary.verify_plan(plan)  →  {G}{notary.verify_plan(plan)}{X}
 
-  {D}The plan IS the agent's identity document.
-  No plan = no authority to act. Expired plan = access revoked.
-  An auditor reads the scope and knows exactly what was authorized.{X}""")
+  {D}No plan = no authority. Expired plan = denied.
+  Auditor reads the scope and sees exactly what was authorized.{X}""")
 
     return plan, checkpoints
 
@@ -546,10 +545,9 @@ def section_otvp(receipt):
     Verification: both openssl + pynacl, no vendor software
 
   {B}What a verifier checks:{X}
-    1. Verify OTVP assessment signature → infrastructure was reviewed
-    2. Verify AgentMint receipt signature → action was governed
-    3. Check receipt.evidence.infrastructure_trust.assessment_hash
-       matches the OTVP assessment hash → links the two layers""")
+    1. OTVP assessment signature → infrastructure reviewed
+    2. AgentMint receipt signature → action governed
+    3. receipt.evidence.infrastructure_trust.assessment_hash matches OTVP hash""")
 
 
 # ═══════════════════════════════════════════════════════
@@ -632,44 +630,162 @@ def section_delegation(notary, plan):
 #  SECTION 10: WHAT TO TELL PARTNERS
 # ═══════════════════════════════════════════════════════
 
-def section_inspection_guide():
-    hdr("10. INSPECTION GUIDE — what partners should verify")
+# ═══════════════════════════════════════════════════════
+#  SECTION 10: TAMPER PROOF
+# ═══════════════════════════════════════════════════════
+
+def section_tamper_proof(notary, results):
+    hdr("10. TAMPER PROOF — what happens if you modify a receipt")
+
+    import copy
+    receipts = [r["receipt"] for r in results]
+
+    # First: verify chain is valid
+    chain_before = verify_chain(receipts)
     print(f"""
-  {B}For a CISO evaluating AgentMint:{X}
+  {D}Starting state: chain of {chain_before.length} receipts, all valid.{X}
+  Chain valid: {G}{chain_before.valid}{X}
+""")
 
-  1. {B}Key management{X}
-     - Where is the signing key stored? (.agentmint/signing_key.bin)
-     - What are the file permissions? (0600)
-     - Is the key rotated? (yes — new Notary(key=path) loads or generates)
-     - Can the key be extracted? (32 bytes on disk, standard Ed25519)
+    # Tamper: change the action field in receipt[1]
+    sub("TEST 1: Modify a field in receipt[1]")
+    tampered = copy.deepcopy(receipts[1])
+    # Manually change a field in the evidence (bypass frozen dataclass for test)
+    object.__setattr__(tampered, 'action', 'tool:steal_all_data')
 
-  2. {B}Receipt integrity{X}
-     - Can I verify a receipt without AgentMint software? (yes — pynacl + openssl)
-     - Is the signature over ALL fields? (yes — signable_dict() is the canonical form)
-     - Can receipts be reordered? (no — previous_receipt_hash chains them)
-     - Can a receipt be deleted? (chain breaks — detectable)
+    sig_valid = notary.verify_receipt(tampered)
+    print(f"  Changed action from 'tool:get_flight_status' to 'tool:steal_all_data'")
+    print(f"  Signature still valid?  {R}{sig_valid}{X}")
+    print(f"  {D}Signature covers the action field — any change invalidates it.{X}")
 
-  3. {B}Plan governance{X}
-     - Who signs the plan? (the Notary key holder — in production, the ops lead)
-     - Can scope be changed after signing? (no — plan is immutable, signed)
-     - What happens when the plan expires? (all actions denied, new plan needed)
-     - Can an agent exceed its plan? (no — in_scope check is step 2, before execution)
+    # Tamper: try to reorder receipts
+    sub("TEST 2: Reorder receipts (swap [1] and [2])")
+    reordered = [receipts[0], receipts[2], receipts[1], receipts[3]]
+    chain_reorder = verify_chain(reordered)
+    print(f"  Swapped receipt[1] and receipt[2]")
+    print(f"  Chain valid?  {R}{chain_reorder.valid}{X}")
+    if chain_reorder.break_at_index is not None:
+        print(f"  Break at index: {chain_reorder.break_at_index}")
+        print(f"  {D}{chain_reorder.reason}{X}")
 
-  4. {B}Evidence package{X}
-     - Is the zip self-contained? (yes — key, receipts, verify scripts, certs)
-     - Can I verify offline? (signatures yes, RFC 3161 timestamps need the CA cert which is included)
-     - How long does audit take? (30 minutes for a trained auditor)
+    # Tamper: delete a receipt from the middle
+    sub("TEST 3: Delete receipt[1] from chain")
+    deleted = [receipts[0], receipts[2], receipts[3]]
+    chain_deleted = verify_chain(deleted)
+    print(f"  Removed receipt[1] (the output scan block)")
+    print(f"  Chain valid?  {R}{chain_deleted.valid}{X}")
+    if chain_deleted.break_at_index is not None:
+        print(f"  Break at index: {chain_deleted.break_at_index}")
+        print(f"  {D}{chain_deleted.reason}{X}")
 
-  5. {B}Shield limitations{X}
-     - What does Shield catch? (21 regex patterns — PII, secrets, injection, encoding, structural)
-     - What does Shield miss? (non-English injection, semantic injection, base64-wrapped payloads)
-     - What's the plan for misses? (ML tier — PromptGuard integration, same pipeline)
-     - Is output scanning unique? (yes — no other framework scans tool outputs)
+    print(f"""
+  {B}Summary:{X}
+    Modify a field  → signature invalid (Ed25519 covers all fields)
+    Reorder         → chain breaks (previous_receipt_hash mismatch)
+    Delete          → chain breaks (gap in hash chain)
+    Add fake        → signature invalid (attacker doesn't have signing key)""")
 
-  6. {B}OTVP integration{X}
-     - Where's the cross-reference? (receipt.evidence.infrastructure_trust.assessment_hash)
-     - Is it verified? (auditor compares hash to OTVP assessment — same SHA-256)
-     - Same crypto? (both Ed25519, both SHA-256, both SPKI PEM, both RFC 3161)
+
+# ═══════════════════════════════════════════════════════
+#  SECTION 11: KEY DERIVATION PROOF
+# ═══════════════════════════════════════════════════════
+
+def section_key_derivation_proof(notary):
+    hdr("11. KEY DERIVATION PROOF — verify key_id is deterministic")
+
+    vk_bytes = bytes(notary.verify_key)
+    computed_key_id = hashlib.sha256(vk_bytes).hexdigest()[:16]
+    actual_key_id = notary.key_id
+
+    print(f"""
+  {D}key_id is not random — it's derived from the public key.
+  An auditor can verify this independently.{X}
+
+  public_key (hex):  {vk_bytes.hex()[:32]}...
+  SHA-256(pubkey):   {hashlib.sha256(vk_bytes).hexdigest()[:40]}...
+  first 16 hex chars: {C}{computed_key_id}{X}
+  notary.key_id:      {C}{actual_key_id}{X}
+  match:              {G}{computed_key_id == actual_key_id}{X}
+
+  {D}This means: given the public_key.pem in any evidence package,
+  you can recompute key_id and verify it matches every receipt.
+  No trust in AgentMint needed — just SHA-256.{X}""")
+
+    # Also verify plan signature manually
+    sub("PLAN SIGNATURE — manual verification")
+    from agentmint.notary import _canonical_json
+    plan_receipts = notary._package.plan if notary._package else None
+    if plan_receipts:
+        signable = plan_receipts.signable_dict()
+        canonical = _canonical_json(signable)
+        sig_bytes = bytes.fromhex(plan_receipts.signature)
+        try:
+            notary.verify_key.verify(canonical, sig_bytes)
+            plan_valid = True
+        except Exception:
+            plan_valid = False
+        print(f"""
+  Plan receipt ID:   {plan_receipts.short_id}
+  Signable fields:   {list(signable.keys())}
+  Canonical bytes:   {len(canonical)} bytes
+  Signature:         {plan_receipts.signature[:40]}...
+  Manual verify:     {G}{plan_valid}{X}
+
+  {D}Same process an auditor uses: extract fields, canonicalize,
+  verify with the public key from the evidence package.{X}""")
+
+
+# ═══════════════════════════════════════════════════════
+#  SECTION 12: INSPECTION GUIDE
+# ═══════════════════════════════════════════════════════
+
+def section_inspection_guide():
+    hdr("12. WHAT TO VERIFY + THIS WEEK")
+    print(f"""
+  {B}Verification checklist (for your partners):{X}
+
+  Key management:     .agentmint/signing_key.bin, 0600, 32 bytes Ed25519
+                      key_id = SHA-256(pubkey)[:16], deterministic
+                      rotation = new key, re-sign plans, old receipts still verify
+
+  Receipt integrity:  verify with pynacl + openssl, no AgentMint software
+                      signature covers ALL fields via signable_dict()
+                      chain: previous_receipt_hash links receipts, tamper = break
+
+  Plan governance:    immutable after signing, TTL enforced, no scope escalation
+                      plan_signature carried into every receipt
+
+  Evidence package:   self-contained zip, offline verification, 30-min audit
+
+  Shield:             21 regex patterns today — PII, secrets, injection, encoding
+                      output scanning is unique — no other framework does this
+                      {Y}honest gaps: non-English injection, semantic attacks, base64{X}
+
+  OTVP:               receipt.evidence.infrastructure_trust.assessment_hash
+                      same Ed25519, same SHA-256, same SPKI PEM, same RFC 3161
+
+  {B}What I'm building this week:{X}
+
+  1. verify_all.py    — single command replaces VERIFY.sh + verify_sigs.py
+                        workpaper-ready output, exception-first, one verdict
+                        auditors asked for this — they don't want two scripts
+
+  2. NHI Authority    — guided questionnaire mode (Mode B)
+     Mode B             "which agents touch production?" "max $ per action?"
+                        answers → plan JSON → ops lead reviews and signs
+
+  3. Shield → 30      — promote system_role_tag to block, add markdown image
+     patterns           exfil, non-ASCII normalization (rogue_agent_demo gaps)
+
+  4. agentmint init   — outputs draft plan.json alongside scan report
+     → plan draft       ops lead reviews the plan, signs it, that's the authority
+
+  {B}What I want your feedback on:{X}
+    - Does the plan receipt model map to how you've seen NHI governance work?
+    - Is the OTVP cross-reference the right integration point?
+    - What would make this evidence package land with a SOC 2 auditor?
+    - Anyone in your circle deploying agents who needs to prove what
+      they did and control which tools they can call?
 """)
 
 
@@ -711,7 +827,13 @@ def main():
     # 9. Delegation
     section_delegation(notary, plan)
 
-    # 10. Inspection guide
+    # 10. Tamper proof
+    section_tamper_proof(notary, results)
+
+    # 11. Key derivation proof
+    section_key_derivation_proof(notary)
+
+    # 12. Inspection guide
     section_inspection_guide()
 
     elapsed = time.time() - start
