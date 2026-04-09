@@ -27,7 +27,7 @@ from .errors import (
     ReplayError,
     DeniedError,
 )
-from .types import DelegationStatus, DelegationResult
+from .types import DelegationStatus, DelegationResult, EnforceMode
 from .decorator import (
     AuthorizationError,
     require_receipt,
@@ -36,7 +36,7 @@ from .decorator import (
     clear_receipt,
 )
 from .circuit_breaker import CircuitBreaker, BreakerResult
-from .sinks import FileSink, Sink
+from .sinks import FileSink, Sink, ConsoleOTelSink
 from .shield import scan, ShieldResult, Threat
 
 __version__ = "0.1.0"
@@ -49,6 +49,7 @@ __all__ = [
     # Types
     "DelegationStatus",
     "DelegationResult",
+    "EnforceMode",
     # Errors
     "AgentMintError",
     "ValidationError",
@@ -72,4 +73,5 @@ __all__ = [
     # Sinks
     "FileSink",
     "Sink",
+    "ConsoleOTelSink",
 ]

@@ -3,7 +3,11 @@
 from __future__ import annotations
 from contextvars import ContextVar
 from functools import wraps
-from typing import Callable, Optional, TypeVar, ParamSpec
+try:
+    from typing import Callable, Optional, TypeVar, ParamSpec
+except ImportError:
+    from typing_extensions import ParamSpec
+    from typing import Callable, Optional, TypeVar
 
 from .core import AgentMint, Receipt
 from .errors import AgentMintError

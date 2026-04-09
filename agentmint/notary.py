@@ -42,6 +42,7 @@ from nacl.signing import SigningKey, VerifyKey
 from nacl.exceptions import BadSignatureError
 
 from .patterns import matches_pattern, in_scope
+from .types import EnforceMode
 from .timestamp import (
     TimestampResult,
     TimestampError,
@@ -261,20 +262,23 @@ class NotarisedReceipt:
     previous_receipt_hash: Optional[str] = None
     timestamp_result: Optional[TimestampResult] = None
     aiuc_controls: tuple[str, ...] = AIUC_CONTROLS
-    # Improvement 4.4: plan signature carried into receipt
+    # Plan signature for receipt→plan linkage
     plan_signature: str = ""
     key_id: str = ""
     agent_signature: str = ""
     agent_key_id: str = ""
-    # Feature 4: receipt upgrades
+    # Policy + output hashes for post-hoc analysis
     policy_hash: str = ""
     output_hash: str = ""
-    # Feature 5: session context
+    # Session context
     session_id: str = ""
     session_trajectory: tuple[dict[str, Any], ...] = ()
     session_escalation: Optional[str] = None
-    # Feature 6: reasoning capture
+    # Reasoning capture
     reasoning_hash: Optional[str] = None
+    # Enforcement mode
+    mode: str = "enforce"
+    original_verdict: Optional[bool] = None
 
     @property
     def short_id(self) -> str:
@@ -296,25 +300,29 @@ class NotarisedReceipt:
             "key_id": self.key_id,
             "agent_key_id": self.agent_key_id,
         }
-        # Feature 4: policy + output hashes
+        # Policy + output hashes
         if self.policy_hash:
             d["policy_hash"] = self.policy_hash
         if self.output_hash:
             d["output_hash"] = self.output_hash
-        # Feature 5: session context
+        # Session context
         if self.session_id:
             d["session_id"] = self.session_id
         if self.session_trajectory:
             d["session_trajectory"] = list(self.session_trajectory)
         if self.session_escalation:
             d["session_escalation"] = self.session_escalation
-        # Feature 6: reasoning hash
+        # Reasoning hash
         if self.reasoning_hash:
             d["reasoning_hash"] = self.reasoning_hash
+        if self.mode != "enforce":
+            d["mode"] = self.mode
+        if self.original_verdict is not None:
+            d["original_verdict"] = self.original_verdict
         # Chain hash is included in signature if present
         if self.previous_receipt_hash is not None:
             d["previous_receipt_hash"] = self.previous_receipt_hash
-        # Improvement 4.4: plan signature
+        # Plan signature
         if self.plan_signature:
             d["plan_signature"] = self.plan_signature
         return d
@@ -333,7 +341,7 @@ class NotarisedReceipt:
         return json.dumps(self.to_dict(), indent=indent, sort_keys=False)
 
 
-# ── Chain verification (improvement 4.6) ──────────────────
+# ── Chain verification ─────────────────────────────────────
 
 @dataclass(frozen=True)
 class ChainVerification:
@@ -489,7 +497,7 @@ class EvidencePackage:
             "receipts": entries,
         }
 
-        # Improvement 4.7: chain root hash + signature + timestamp
+        # Chain root hash + signature + timestamp
         chain_result = verify_chain(self._receipts)
         chain_info: dict[str, Any] = {
             "valid": chain_result.valid,
@@ -564,7 +572,7 @@ class EvidencePackage:
         shutil.move(str(tmp_path), str(zip_path))
 
 
-# ── Timestamp with fallback (improvement 4.5) ─────────────
+# ── Timestamp with fallback ───────────────────────────────
 
 def _timestamp_with_fallback(
     data: bytes,
@@ -590,7 +598,7 @@ def _timestamp_with_fallback(
 _CHAIN_STATE_FILE = "chain_state.json"
 
 
-# ── Feature 4: policy hash ────────────────────────────────
+# ── Policy hash ───────────────────────────────────────────
 
 def _compute_policy_hash(plan: PlanReceipt) -> str:
     """SHA-256 of canonical(scope + checkpoints + delegates_to)."""
@@ -602,7 +610,7 @@ def _compute_policy_hash(plan: PlanReceipt) -> str:
     return hashlib.sha256(_canonical_json(policy_data)).hexdigest()
 
 
-# ── Feature 7: scope intersection for multi-agent delegation ──
+# ── Scope intersection for delegation ─────────────────────
 
 def intersect_scopes(
     parent_scope: Sequence[str],
@@ -681,7 +689,7 @@ class Notary:
 
     __slots__ = (
         "_key", "_vk", "_key_id", "_key_dir", "_package", "_chain_hashes", "_tsa_urls",
-        "_circuit_breaker", "_sink",
+        "_circuit_breaker", "_sink", "_mode",
         "_session_id", "_session_policy", "_session_counters", "_session_trajectory",
         "_child_plans",
     )
@@ -693,8 +701,9 @@ class Notary:
         circuit_breaker: Any = None,
         sink: Any = None,
         session_policy: Optional[dict[str, Any]] = None,
+        mode: EnforceMode | str = EnforceMode.ENFORCE,
     ) -> None:
-        # Improvement 4.1: key persistence via KeyStore
+        # Key persistence via KeyStore
         if key is None:
             # Ephemeral — for demos and quickstart
             self._key = SigningKey.generate()
@@ -710,26 +719,35 @@ class Notary:
         self._vk = self._key.verify_key
         self._key_id = _derive_key_id(self._vk)
         self._package: Optional[EvidencePackage] = None
-        # Improvement 4.2: per-plan chain isolation
+        # Per-plan chain isolation
         self._chain_hashes: dict[str, Optional[str]] = _load_chain_state(self._key_dir)
-        # Improvement 4.5: fallback TSA
         self._tsa_urls = tsa_urls or DEFAULT_TSA_URLS
-        # Feature 2: circuit breaker integration
+        self._mode = EnforceMode(mode) if isinstance(mode, str) else mode
         self._circuit_breaker = circuit_breaker
-        # Feature 3: sink integration
-        self._sink = sink
-        # Feature 5: session context
+        # Sink: normalize to list, isolate failures between sinks
+        if sink is None:
+            self._sink: list[Any] = []
+        elif isinstance(sink, (list, tuple)):
+            self._sink = list(sink)
+        else:
+            self._sink = [sink]
+        # Session context
         self._session_id: str = str(uuid.uuid4())
         self._session_policy: Optional[dict[str, Any]] = session_policy
         self._session_counters: dict[str, int] = {}
         self._session_trajectory: deque = deque(maxlen=20)
-        # Feature 7: child plan tracking
+        # Child plan tracking (delegation)
         self._child_plans: dict[str, list[str]] = {}
 
     @property
     def key_id(self) -> str:
         """Stable key identifier for revocation support."""
         return self._key_id
+
+    @property
+    def mode(self) -> "EnforceMode":
+        """Current enforcement mode."""
+        return self._mode
 
     @property
     def verify_key(self) -> VerifyKey:
@@ -780,7 +798,7 @@ class Notary:
 
         plan = replace(unsigned, signature=signature)
 
-        # Improvement 4.2: initialize chain for this plan (not global reset)
+        # Initialize chain for this plan
         self._chain_hashes[plan_id] = None
         _save_chain_state(self._key_dir, self._chain_hashes)
         self._package = EvidencePackage(
@@ -809,7 +827,7 @@ class Notary:
         agent = _require_non_empty_string(agent, "agent", MAX_IDENTITY_LEN)
         evidence = _require_evidence(evidence)
 
-        # Feature 2: circuit breaker — check FIRST, before policy
+        # Circuit breaker — check before policy eval
         if self._circuit_breaker is not None:
             br = self._circuit_breaker.check(agent)
             if not br.is_allowed:
@@ -834,7 +852,7 @@ class Notary:
         observed_at = _utc_now().isoformat()
         receipt_id = str(uuid.uuid4())
 
-        # Improvement 4.2: per-plan chain linking
+        # Per-plan chain linking
         prev_hash = self._chain_hashes.get(plan.id)
 
         # Agent co-signature: agent signs the evidence hash
@@ -844,19 +862,19 @@ class Notary:
             agent_sig = agent_key.sign(evidence_bytes).signature.hex()
             agent_kid = _derive_key_id(agent_key.verify_key)
 
-        # Feature 4: compute policy_hash and output_hash
+        # Policy + output hashes
         policy_hash = _compute_policy_hash(plan)
         output_hash = ""
         if output is not None:
             output_bytes = _canonical_json(output)
             output_hash = hashlib.sha256(output_bytes).hexdigest()
 
-        # Feature 6: reasoning hash
+        # Reasoning hash
         reasoning_hash: Optional[str] = None
         if reasoning is not None:
             reasoning_hash = hashlib.sha256(reasoning.encode("utf-8")).hexdigest()
 
-        # Feature 5: session escalation check
+        # Session escalation check
         session_escalation: Optional[str] = None
         if self._session_policy:
             for pattern, limits in self._session_policy.items():
@@ -869,7 +887,7 @@ class Notary:
                     elif escalate_after is not None and count >= escalate_after:
                         session_escalation = f"escalate:{pattern}:{count}/{escalate_after}"
 
-        # Feature 5: session deny overrides policy evaluation
+        # Session deny overrides policy evaluation
         is_session_denied = (
             session_escalation is not None
             and session_escalation.startswith("denied:")
@@ -877,7 +895,16 @@ class Notary:
         final_in_policy = False if is_session_denied else evaluation.in_policy
         final_reason = session_escalation if is_session_denied else evaluation.reason
 
-        # Feature 5: build trajectory entry
+        # Enforcement mode: shadow/warn evaluate fully but never block
+        mode_str = self._mode.value
+        original_verdict: Optional[bool] = None
+        if self._mode is not EnforceMode.ENFORCE:
+            original_verdict = final_in_policy
+            final_in_policy = True
+            if not original_verdict:
+                final_reason = f"{mode_str}:{final_reason}"
+
+        # Build trajectory entry
         trajectory_entry = {
             "action": action,
             "agent": agent,
@@ -911,6 +938,8 @@ class Notary:
             session_trajectory=tuple(recent_trajectory),
             session_escalation=session_escalation,
             reasoning_hash=reasoning_hash,
+            mode=mode_str,
+            original_verdict=original_verdict,
         )
 
         signature = _sign(self._key, unsigned.signable_dict())
@@ -930,7 +959,7 @@ class Notary:
         # Reconstruct with real signature (frozen dataclass)
         receipt = replace(unsigned, signature=signature, timestamp_result=ts_result)
 
-        # Improvement 4.2: update chain per plan_id
+        # Update chain hash
         signed_payload_bytes = _canonical_json({**unsigned.signable_dict(), "signature": signature})
         self._chain_hashes[plan.id] = hashlib.sha256(signed_payload_bytes).hexdigest()
         _save_chain_state(self._key_dir, self._chain_hashes)
@@ -938,23 +967,23 @@ class Notary:
         if self._package and self._package.plan.id == plan.id:
             self._package.add(receipt)
 
-        # Feature 2: record call in circuit breaker
+        # Record call in circuit breaker
         if self._circuit_breaker is not None:
             self._circuit_breaker.record(agent)
 
-        # Feature 3: emit to sink
-        if self._sink is not None:
-            self._sink.emit(receipt)
+        # Emit to sink
+        for _sink in self._sink:
+            try:
+                _sink.emit(receipt)
+            except Exception:
+                pass
 
-        # Feature 5: update session counters
+        # Update session counters
         if self._session_policy:
             for pattern in self._session_policy:
                 if matches_pattern(action, pattern):
                     self._session_counters[pattern] = self._session_counters.get(pattern, 0) + 1
 
-        # Feature 6: store reasoning in evidence if provided
-        if reasoning is not None and self._package and self._package.plan.id == plan.id:
-            pass  # reasoning text stays in caller's scope; hash is in receipt
 
         return receipt
 
@@ -981,13 +1010,22 @@ class Notary:
         prev_hash = self._chain_hashes.get(plan.id)
         policy_hash = _compute_policy_hash(plan)
 
+        mode_str = self._mode.value
+        _den_verdict: Optional[bool] = None
+        _den_policy = False
+        _den_reason = reason
+        if self._mode is not EnforceMode.ENFORCE:
+            _den_verdict = False
+            _den_policy = True
+            _den_reason = f"{mode_str}:{reason}"
+
         unsigned = NotarisedReceipt(
             id=receipt_id,
             plan_id=plan.id,
             agent=agent,
             action=action,
-            in_policy=False,
-            policy_reason=reason,
+            in_policy=_den_policy,
+            policy_reason=_den_reason,
             evidence_hash=evidence_hash,
             evidence=evidence,
             observed_at=observed_at,
@@ -997,6 +1035,8 @@ class Notary:
             key_id=self._key_id,
             policy_hash=policy_hash,
             session_id=self._session_id,
+            mode=mode_str,
+            original_verdict=_den_verdict,
         )
         signature = _sign(self._key, unsigned.signable_dict())
 
@@ -1017,12 +1057,15 @@ class Notary:
         if self._package and self._package.plan.id == plan.id:
             self._package.add(receipt)
 
-        if self._sink is not None:
-            self._sink.emit(receipt)
+        for _sink in self._sink:
+            try:
+                _sink.emit(receipt)
+            except Exception:
+                pass
 
         return receipt
 
-    # Feature 7: multi-agent delegation
+    # Multi-agent delegation
 
     def delegate_to_agent(
         self,

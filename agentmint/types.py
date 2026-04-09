@@ -41,3 +41,15 @@ class DelegationResult:
     @property
     def needs_approval(self) -> bool:
         return self.status == DelegationStatus.CHECKPOINT
+
+
+class EnforceMode(Enum):
+    """Enforcement mode for gradual production rollout.
+
+    SHADOW:  Full evaluation, never blocks. Records original verdict.
+    WARN:    Full evaluation, never blocks. Emits warnings to sinks.
+    ENFORCE: Full enforcement. Default. Current behavior unchanged.
+    """
+    SHADOW = "shadow"
+    WARN = "warn"
+    ENFORCE = "enforce"

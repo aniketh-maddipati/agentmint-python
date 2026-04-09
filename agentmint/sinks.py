@@ -88,3 +88,42 @@ def _severity(receipt: Any) -> str:
     if not getattr(receipt, "in_policy", True):
         return "warn"
     return "info"
+
+
+# ── ConsoleOTelSink ───────────────────────────────────────────
+
+
+class ConsoleOTelSink:
+    """Print OTel-style span output. Zero dependencies.
+
+    Produces output that shows what a real OTel integration would
+    export, without requiring opentelemetry-sdk. For demos and staging.
+    """
+
+    __slots__ = ("_service",)
+
+    def __init__(self, service_name: str = "agentmint") -> None:
+        self._service = service_name
+
+    def emit(self, receipt: Any) -> None:
+        """Print one span-like record."""
+        action = getattr(receipt, "action", "unknown")
+        rid = getattr(receipt, "id", "")[:8]
+        agent = getattr(receipt, "agent", "")
+        in_policy = getattr(receipt, "in_policy", False)
+        reason = getattr(receipt, "policy_reason", "")[:60]
+        mode = getattr(receipt, "mode", "enforce")
+        orig = getattr(receipt, "original_verdict", None)
+
+        print(f"  [OTel] {self._service} | agentmint.{action}")
+        print(f"         receipt={rid} agent={agent} in_policy={in_policy}")
+        print(f"         reason={reason}")
+        if mode != "enforce":
+            print(f"         mode={mode} would_deny={orig is False}")
+        print()
+
+    def flush(self) -> None:
+        pass
+
+    def close(self) -> None:
+        pass
