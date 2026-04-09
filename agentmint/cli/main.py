@@ -210,7 +210,7 @@ def verify(directory):
     target = Path(directory).resolve()
     yaml_path = target / "agentmint.yaml"
     if not yaml_path.exists():
-        click.echo("No agentmint.yaml found. Run `agentmint init .` first.")
+        click.echo("No agentmint.yaml found. Run `agentmint init . --write` first.")
         sys.exit(1)
     candidates = scan_directory(str(target), skip_tests=True)
     missing = []
@@ -234,7 +234,6 @@ def verify(directory):
     else:
         _out(f"\n[#10B981]✓ All {len(candidates)} detected tools have AgentMint imports.[/#10B981]\n",
              f"\n✓ All {len(candidates)} detected tools have AgentMint imports.\n")
-
 
 # ── Helpers ──────────────────────────────────────────────
 
