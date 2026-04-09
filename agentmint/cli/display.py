@@ -28,6 +28,58 @@ def _out(rich_msg: str, plain_msg: str) -> None:
         print(plain_msg)
 
 
+def print_banner() -> None:
+    """Brand banner shown at the start of agentmint init."""
+    if _CONSOLE:
+        _CONSOLE.print()
+        _CONSOLE.print(
+            "  [#3B82F6]╭─────────────────────────────────────────────────────╮[/#3B82F6]"
+        )
+        _CONSOLE.print(
+            "  [#3B82F6]│[/#3B82F6]"
+            "  [bold #3B82F6]Agent[/bold #3B82F6][bold #E2E8F0]Mint[/bold #E2E8F0]"
+            "                                          "
+            "[#3B82F6]│[/#3B82F6]"
+        )
+        _CONSOLE.print(
+            "  [#3B82F6]│[/#3B82F6]"
+            "  [#94A3B8]OWASP AI Agent Security compliance in one command[/#94A3B8]"
+            "  "
+            "[#3B82F6]│[/#3B82F6]"
+        )
+        _CONSOLE.print(
+            "  [#3B82F6]│[/#3B82F6]"
+            "                                                       "
+            "[#3B82F6]│[/#3B82F6]"
+        )
+        _CONSOLE.print(
+            "  [#3B82F6]│[/#3B82F6]"
+            "  [#64748B]Ed25519 receipts · SHA-256 chains · Merkle trees[/#64748B]"
+            "   "
+            "[#3B82F6]│[/#3B82F6]"
+        )
+        _CONSOLE.print(
+            "  [#3B82F6]│[/#3B82F6]"
+            "  [#64748B]1 runtime dep · works offline · MIT license[/#64748B]"
+            "        "
+            "[#3B82F6]│[/#3B82F6]"
+        )
+        _CONSOLE.print(
+            "  [#3B82F6]╰─────────────────────────────────────────────────────╯[/#3B82F6]"
+        )
+        _CONSOLE.print()
+    else:
+        print()
+        print("  ┌─────────────────────────────────────────────────────┐")
+        print("  │  AgentMint                                          │")
+        print("  │  OWASP AI Agent Security compliance in one command  │")
+        print("  │                                                     │")
+        print("  │  Ed25519 receipts · SHA-256 chains · Merkle trees   │")
+        print("  │  1 runtime dep · works offline · MIT license        │")
+        print("  └─────────────────────────────────────────────────────┘")
+        print()
+
+
 def _group_by_file(candidates: List[ToolCandidate]) -> dict:
     by_file: dict[str, list[ToolCandidate]] = defaultdict(list)
     for c in candidates:
@@ -70,16 +122,22 @@ def print_scan_report(candidates: List[ToolCandidate]) -> None:
             _CONSOLE.print(f"  [bold]{filepath}[/bold]")
             for t in sorted(tools, key=lambda x: x.line):
                 ln = f":{t.line}" if t.line > 0 else ""
-                dot = {"high": "[green]●[/green]", "medium": "[yellow]●[/yellow]", "low": "[dim]○[/dim]"}
-                fw = {"langgraph": "[cyan]langgraph[/cyan]", "openai-sdk": "[magenta]openai[/magenta]",
-                      "crewai": "[blue]crewai[/blue]", "mcp": "[bright_cyan]mcp[/bright_cyan]",
-                      "raw": "[dim]inferred[/dim]"}
+                risk_fmt = {
+                    "LOW": "[#10B981]LOW [/#10B981]",
+                    "MEDIUM": "[#FBBF24]MED [/#FBBF24]",
+                    "HIGH": "[#EF4444]HIGH[/#EF4444]",
+                    "CRITICAL": "[bold #EF4444]CRIT[/bold #EF4444]",
+                }
+                risk_tag = risk_fmt.get(getattr(t, "risk_level", ""), "[#64748B]—   [/#64748B]")
+                fw = {"langgraph": "[#3B82F6]langgraph[/#3B82F6]", "openai-sdk": "[#3B82F6]openai[/#3B82F6]",
+                      "crewai": "[#3B82F6]crewai[/#3B82F6]", "mcp": "[#3B82F6]mcp[/#3B82F6]",
+                      "raw": "[#64748B]inferred[/#64748B]"}
                 _CONSOLE.print(
-                    f"    {dot.get(t.confidence, '○')}  "
-                    f"[bold]{t.symbol}[/bold]"
-                    f"[dim]{ln}[/dim]  "
+                    f"    {risk_tag}  "
+                    f"[bold #E2E8F0]{t.symbol}[/bold #E2E8F0]"
+                    f"[#64748B]{ln}[/#64748B]  "
                     f"{fw.get(t.framework, t.framework)}  "
-                    f"[dim]{t.short_rule}[/dim]"
+                    f"[#64748B]{t.short_rule}[/#64748B]"
                 )
             _CONSOLE.print()
     else:
@@ -227,11 +285,21 @@ def print_status(ok: bool, message: str) -> None:
         _out(f"  [red]✗[/red] {message}", f"  ✗ {message}")
 
 
+def _python_cmd() -> str:
+    """Return the Python command name for this system."""
+    import sys as _sys, os as _os
+    name = _os.path.basename(_sys.executable) or "python"
+    # Prefer 'python3' over 'python3.8' or 'python3.12' for readability
+    if name.startswith("python3."):
+        return "python3"
+    return name
+
+
 def print_quickstart_notice(path: str) -> None:
     _out(f"\n  [green]✓[/green] Generated [bold]{path}[/bold]",
          f"\n  ✓ Generated {path}")
-    _out(f"    Run it → [bold]python3 {path}[/bold] — see your first signed receipt\n",
-         f"    Run it → python3 {path} — see your first signed receipt\n")
+    _out(f"    Run it → [bold]{_python_cmd()} {path}[/bold] — see your first signed receipt\n",
+         f"    Run it → {_python_cmd()} {path} — see your first signed receipt\n")
 
 
 def print_next_steps(has_quickstart: bool = False) -> None:

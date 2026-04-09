@@ -1,0 +1,358 @@
+{
+  "version": "0.3.0",
+  "target": "/Users/aniketh/agentmint-python/examples",
+  "assessed_at": "2026-04-09T16:17:14.443984+00:00",
+  "scan_ms": 6207.570208,
+  "total_tools": 25,
+  "score": 94,
+  "grade": "A",
+  "checks": [
+    {
+      "id": "TG-001",
+      "category": "Tool Governance",
+      "name": "Tool inventory complete",
+      "passed": true,
+      "severity": "critical",
+      "recommendation": "Run `agentmint init .` to discover tools"
+    },
+    {
+      "id": "TG-002",
+      "category": "Tool Governance",
+      "name": "High-confidence detections",
+      "passed": false,
+      "severity": "high",
+      "recommendation": "8 tools need manual review"
+    },
+    {
+      "id": "TG-003",
+      "category": "Tool Governance",
+      "name": "Scope suggestions generated",
+      "passed": true,
+      "severity": "high",
+      "recommendation": "Run `agentmint init . --write` to generate policy"
+    },
+    {
+      "id": "TG-004",
+      "category": "Tool Governance",
+      "name": "Write/delete ops identified",
+      "passed": true,
+      "severity": "high",
+      "recommendation": "4 dangerous operations need checkpoints"
+    },
+    {
+      "id": "TG-005",
+      "category": "Tool Governance",
+      "name": "Network ops identified",
+      "passed": true,
+      "severity": "medium",
+      "recommendation": "0 network tools need output scanning"
+    },
+    {
+      "id": "RE-001",
+      "category": "Runtime Enforcement",
+      "name": "Input scanning available",
+      "passed": true,
+      "severity": "critical",
+      "recommendation": "Shield provides 25 regex + fuzzy + entropy patterns"
+    },
+    {
+      "id": "RE-002",
+      "category": "Runtime Enforcement",
+      "name": "Output scanning available",
+      "passed": true,
+      "severity": "critical",
+      "recommendation": "Shield scans tool outputs \u2014 supply chain defense"
+    },
+    {
+      "id": "RE-003",
+      "category": "Runtime Enforcement",
+      "name": "Rate limiting available",
+      "passed": true,
+      "severity": "high",
+      "recommendation": "CircuitBreaker with per-agent sliding window"
+    },
+    {
+      "id": "RE-004",
+      "category": "Runtime Enforcement",
+      "name": "Sub-50ms enforcement",
+      "passed": true,
+      "severity": "medium",
+      "recommendation": "Measured: ~2-4ms per receipt"
+    },
+    {
+      "id": "EI-001",
+      "category": "Evidence Integrity",
+      "name": "Ed25519 signing",
+      "passed": true,
+      "severity": "critical",
+      "recommendation": "Notary signs every receipt automatically"
+    },
+    {
+      "id": "EI-002",
+      "category": "Evidence Integrity",
+      "name": "SHA-256 hash chains",
+      "passed": true,
+      "severity": "critical",
+      "recommendation": "Tamper-evident chain per plan"
+    },
+    {
+      "id": "EI-003",
+      "category": "Evidence Integrity",
+      "name": "Evidence export",
+      "passed": true,
+      "severity": "high",
+      "recommendation": "notary.export_evidence() \u2192 portable zip"
+    },
+    {
+      "id": "CM-001",
+      "category": "Compliance Mapping",
+      "name": "AIUC-1 controls",
+      "passed": true,
+      "severity": "high",
+      "recommendation": "E015, D003, B001 auto-mapped in receipts"
+    },
+    {
+      "id": "CM-002",
+      "category": "Compliance Mapping",
+      "name": "SOC 2 audit trail",
+      "passed": true,
+      "severity": "high",
+      "recommendation": "Signed + hash-chained satisfies CC6/CC7"
+    },
+    {
+      "id": "CM-003",
+      "category": "Compliance Mapping",
+      "name": "OWASP LLM Top 10",
+      "passed": true,
+      "severity": "high",
+      "recommendation": "Shield covers LLM01, LLM03, LLM06"
+    }
+  ],
+  "tools": [
+    {
+      "file": "gatekeeper_demo.py",
+      "line": 227,
+      "symbol": "read_file",
+      "framework": "raw",
+      "operation": "read",
+      "scope": "tool:read_file",
+      "confidence": "medium"
+    },
+    {
+      "file": "harness_integration.py",
+      "line": 38,
+      "symbol": "lookup_booking",
+      "framework": "raw",
+      "operation": "read",
+      "scope": "tool:lookup_booking",
+      "confidence": "low"
+    },
+    {
+      "file": "harness_integration.py",
+      "line": 42,
+      "symbol": "get_flight_status",
+      "framework": "raw",
+      "operation": "read",
+      "scope": "tool:get_flight_status",
+      "confidence": "medium"
+    },
+    {
+      "file": "harness_integration.py",
+      "line": 47,
+      "symbol": "send_email",
+      "framework": "raw",
+      "operation": "exec",
+      "scope": "tool:send_email",
+      "confidence": "low"
+    },
+    {
+      "file": "harness_integration.py",
+      "line": 51,
+      "symbol": "search_web",
+      "framework": "raw",
+      "operation": "read",
+      "scope": "tool:search_web",
+      "confidence": "medium"
+    },
+    {
+      "file": "mcp_real_demo.py",
+      "line": 111,
+      "symbol": "read_file",
+      "framework": "raw",
+      "operation": "read",
+      "scope": "tool:read_file",
+      "confidence": "low"
+    },
+    {
+      "file": "mcp_real_demo.py",
+      "line": 143,
+      "symbol": "write_file",
+      "framework": "raw",
+      "operation": "write",
+      "scope": "tool:write_file",
+      "confidence": "low"
+    },
+    {
+      "file": "crewai_aws.py",
+      "line": 76,
+      "symbol": "s3_tool",
+      "framework": "crewai",
+      "operation": "unknown",
+      "scope": "tool:s3_tool",
+      "confidence": "high"
+    },
+    {
+      "file": "crewai_aws.py",
+      "line": 212,
+      "symbol": "s3_tool",
+      "framework": "crewai",
+      "operation": "unknown",
+      "scope": "tool:s3_tool",
+      "confidence": "high"
+    },
+    {
+      "file": "crewai_aws.py",
+      "line": 33,
+      "symbol": "S3ReaderTool",
+      "framework": "crewai",
+      "operation": "unknown",
+      "scope": "tool:S3ReaderTool",
+      "confidence": "high"
+    },
+    {
+      "file": "crewai_aws.py",
+      "line": 176,
+      "symbol": "gate",
+      "framework": "crewai",
+      "operation": "gate",
+      "scope": "hook:before_tool_call",
+      "confidence": "high"
+    },
+    {
+      "file": "combined_demo.py",
+      "line": 108,
+      "symbol": "S3Tool",
+      "framework": "crewai",
+      "operation": "unknown",
+      "scope": "tool:S3Tool",
+      "confidence": "high"
+    },
+    {
+      "file": "combined_demo.py",
+      "line": 60,
+      "symbol": "S3Tool",
+      "framework": "crewai",
+      "operation": "unknown",
+      "scope": "tool:S3Tool",
+      "confidence": "high"
+    },
+    {
+      "file": "combined_demo.py",
+      "line": 90,
+      "symbol": "gate",
+      "framework": "crewai",
+      "operation": "gate",
+      "scope": "hook:before_tool_call",
+      "confidence": "high"
+    },
+    {
+      "file": "combined_demo.py",
+      "line": 161,
+      "symbol": "read_file",
+      "framework": "raw",
+      "operation": "read",
+      "scope": "tool:read_file",
+      "confidence": "low"
+    },
+    {
+      "file": "crewai_demo.py",
+      "line": 182,
+      "symbol": "S3Reader",
+      "framework": "crewai",
+      "operation": "unknown",
+      "scope": "tool:S3Reader",
+      "confidence": "high"
+    },
+    {
+      "file": "crewai_demo.py",
+      "line": 249,
+      "symbol": "S3Reader",
+      "framework": "crewai",
+      "operation": "unknown",
+      "scope": "tool:S3Reader",
+      "confidence": "high"
+    },
+    {
+      "file": "crewai_demo.py",
+      "line": 29,
+      "symbol": "S3Reader",
+      "framework": "crewai",
+      "operation": "unknown",
+      "scope": "tool:S3Reader",
+      "confidence": "high"
+    },
+    {
+      "file": "crewai_demo.py",
+      "line": 155,
+      "symbol": "gate",
+      "framework": "crewai",
+      "operation": "gate",
+      "scope": "hook:before_tool_call",
+      "confidence": "high"
+    },
+    {
+      "file": "openai_agents_receipts_demo/demo_open_ai_receipts.py",
+      "line": 95,
+      "symbol": "get_weather",
+      "framework": "openai-sdk",
+      "operation": "read",
+      "scope": "tool:get_weather",
+      "confidence": "high"
+    },
+    {
+      "file": "openai_agents_receipts_demo/demo_open_ai_receipts.py",
+      "line": 108,
+      "symbol": "lookup_account",
+      "framework": "openai-sdk",
+      "operation": "read",
+      "scope": "tool:lookup_account",
+      "confidence": "high"
+    },
+    {
+      "file": "openai_agents_receipts_demo/demo_open_ai_receipts.py",
+      "line": 121,
+      "symbol": "send_notification",
+      "framework": "openai-sdk",
+      "operation": "exec",
+      "scope": "tool:send_notification",
+      "confidence": "high"
+    },
+    {
+      "file": "openai_agents_receipts_demo/demo_open_ai_receipts.py",
+      "line": 151,
+      "symbol": "send_notification",
+      "framework": "openai-sdk",
+      "operation": "exec",
+      "scope": "tool:send_notification",
+      "confidence": "high"
+    },
+    {
+      "file": "openai_agents_receipts_demo/demo_open_ai_receipts.py",
+      "line": 157,
+      "symbol": "get_weather",
+      "framework": "openai-sdk",
+      "operation": "read",
+      "scope": "tool:get_weather",
+      "confidence": "high"
+    },
+    {
+      "file": "openai_agents_receipts_demo/demo_open_ai_receipts.py",
+      "line": 157,
+      "symbol": "lookup_account",
+      "framework": "openai-sdk",
+      "operation": "read",
+      "scope": "tool:lookup_account",
+      "confidence": "high"
+    }
+  ]
+}

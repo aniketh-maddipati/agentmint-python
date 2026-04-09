@@ -1,0 +1,32 @@
+# AgentMint policy — auto-generated from discovery scan
+# 2026-04-09T16:17:14.446802+00:00
+
+version: '1.0'
+
+enforcement:
+  mode: shadow  # flip to enforce when ready
+
+scope:
+  - 'tool:read_file'  # read_file
+  - 'tool:get_flight_status'  # get_flight_status
+  - 'tool:search_web'  # search_web
+  - 'tool:s3_tool'  # s3_tool
+  - 'tool:S3ReaderTool'  # S3ReaderTool
+  - 'hook:before_tool_call'  # gate
+  - 'tool:S3Tool'  # S3Tool
+  - 'tool:S3Reader'  # S3Reader
+  - 'tool:get_weather'  # get_weather
+  - 'tool:lookup_account'  # lookup_account
+  - 'tool:send_notification'  # send_notification
+
+checkpoints:
+  - 'tool:send_notification'  # exec
+  - 'tool:send_notification'  # exec
+
+circuit_breaker:
+  max_calls: 100
+  window_seconds: 60
+
+shield:
+  input_scan: true
+  output_scan: true  # supply chain defense

@@ -78,6 +78,7 @@ class ToolCandidate:
     scope_suggestion: str = ""
     detection_rule: str = ""
     base_classes: List[str] = field(default_factory=list)
+    risk_level: str = ""    # LOW | MEDIUM | HIGH | CRITICAL — set in __post_init__
 
     def __post_init__(self):
         if not self.operation_guess:
@@ -88,6 +89,9 @@ class ToolCandidate:
             self.scope_suggestion = suggest_scope(
                 self.symbol, self.operation_guess, self.resource_guess
             )
+        if not self.risk_level:
+            from .risk import classify_risk
+            self.risk_level = classify_risk(self).label
 
     def to_dict(self) -> dict:
         return asdict(self)
