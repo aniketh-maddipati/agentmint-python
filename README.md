@@ -6,82 +6,75 @@
 
 **OWASP AI Agent Security compliance in one command.**
 
-<br>
-
-[<img src="https://img.shields.io/badge/MIT_License-10B981?style=flat-square&labelColor=0B1120" alt="MIT">](https://opensource.org/licenses/MIT)
-[<img src="https://img.shields.io/badge/Python_3.8+-3B82F6?style=flat-square&labelColor=0B1120" alt="Python 3.8+">]()
-[<img src="https://img.shields.io/badge/324_tests_passing-10B981?style=flat-square&labelColor=0B1120" alt="Tests">]()
-[<img src="https://img.shields.io/badge/OWASP_Solutions_Catalog-3B82F6?style=flat-square&labelColor=0B1120" alt="OWASP">](https://github.com/OWASP/www-project-agentic-skills-top-10/blob/main/solutions.md)
-
-<br>
-
-*Every team should be able to ship production-ready agents<br>without enterprise contracts or six-figure security budgets.*
-
-</div>
-
-<br>
+Every team should be able to ship production-ready agents without enterprise contracts or six-figure security budgets.
 
 ```bash
 pip install agentmint
 agentmint init .
 ```
 
-Scans your AI agent codebase, finds every unprotected tool call, risk-classifies each one (**LOW** → **CRITICAL**), and maps your coverage against the [OWASP AI Agent Security Cheat Sheet](https://owasp.org/www-project-agentic-ai-threats-and-mitigations/). Works with **LangGraph**, **CrewAI**, **OpenAI Agents SDK**, and **MCP**. No API keys. Works offline.
-
-Tested on [crewAI-examples](https://github.com/crewAIInc/crewAI-examples) (116 Python files, code we'd never seen): **119 tool calls found across 45 files, 4 frameworks detected, 3 HIGH risk tools correctly identified.**
+Scans your AI agent codebase, finds every unprotected tool call, risk-classifies each one (LOW → CRITICAL), and maps your coverage against the OWASP AI Agent Security Cheat Sheet. Works with LangGraph, CrewAI, OpenAI Agents SDK, and MCP. No API keys. Works offline.
 
 ---
 
-## What you see
+### Who this is for
 
-```
-  ╭─────────────────────────────────────────────────────╮
-  │  AgentMint                                          │
-  │  OWASP AI Agent Security compliance in one command  │
-  │                                                     │
-  │  Ed25519 receipts · SHA-256 chains · Merkle trees   │
-  │  Works offline · MIT license                        │
-  ╰─────────────────────────────────────────────────────╯
+ Security / infra engineers running LangGraph, CrewAI, OpenAI Agents, or MCP in prod.  
+ Teams that need OWASP AI Agent Security coverage and auditable evidence for agent actions.  
+ Founders who want something concrete to show CISOs, auditors, and enterprise buyers.
 
-  crewai_aws.py
-    MED   S3ReaderTool:33   crewai   BaseTool subclass
-    MED   gate:176          crewai   @before_tool_call (gate)
+---
 
-  demo_open_ai_receipts.py
-    LOW   get_weather:95         openai   @function_tool
-    HIGH  send_notification:121  openai   @function_tool
+### TL;DR
 
-  ──── Risk classification (OWASP §4) ────
+ Point AgentMint at your repo, see every tool call and its risk level.  
+ Get an OWASP AI Agent Security scorecard and coverage report in under 60 seconds.  
+ Export cryptographic evidence packages that auditors can verify with `openssl` alone.
 
-    3 HIGH · 12 MEDIUM · 10 LOW
+---
 
-  ╭─ OWASP AI Agent Security Coverage ──────────────────╮
-  │  ✅ §1 Tool Security          25 tools, 3 frameworks│
-  │  ⬜ §2 Prompt Injection       Out of scope          │
-  │  ✅ §3 Memory Security        PII scanning available│
-  │  ✅ §4 Human-in-the-Loop      3 HIGH need approval  │
-  │  ✅ §5 Output Validation      23 patterns + limiter │
-  │  ✅ §6 Monitoring             Signed receipts+chains│
-  │  ✅ §7 Multi-Agent            Scoped delegation     │
-  │  ✅ §8 Data Protection        AUTO→RESTRICTED       │
-  │                                                     │
-  │  7/8 sections · §2 out of scope · 25 tools          │
-  ╰─────────────────────────────────────────────────────╯
+### What you see
 
-  3 of your 25 tools can act outside your app with no audit trail.
+```text
+╭─────────────────────────────────────────────────────╮
+│  AgentMint                                          │
+│  OWASP AI Agent Security compliance in one command  │
+│                                                     │
+│  Ed25519 receipts · SHA-256 chains · Merkle trees   │
+│  Works offline · MIT license                        │
+╰─────────────────────────────────────────────────────╯
 
-  Get compliant in 60 seconds:
-  1. agentmint init . --write         generate config + quickstart
-  2. python quickstart_agentmint.py   see your first signed receipt
-  3. agentmint audit .                get your compliance score
+crewai_aws.py
+  MED   S3ReaderTool:33   crewai   BaseTool subclass
+  MED   gate:176          crewai   @before_tool_call (gate)
 
-  Show the scorecard to your founder.
-  Hand the evidence package to your auditor.
+demo_open_ai_receipts.py
+  LOW   get_weather:95         openai   @function_tool
+  HIGH  send_notification:121  openai   @function_tool
+
+──── Risk classification (OWASP §4) ────
+
+  3 HIGH · 12 MEDIUM · 10 LOW
+
+╭─ OWASP AI Agent Security Coverage ──────────────────╮
+│  ✅ §1 Tool Security          25 tools, 3 frameworks│
+│  ⬜ §2 Prompt Injection       Out of scope          │
+│  ✅ §3 Memory Security        PII scanning available│
+│  ✅ §4 Human-in-the-Loop      3 HIGH need approval  │
+│  ✅ §5 Output Validation      23 patterns + limiter │
+│  ✅ §6 Monitoring             Signed receipts+chains│
+│  ✅ §7 Multi-Agent            Scoped delegation     │
+│  ✅ §8 Data Protection        AUTO→RESTRICTED       │
+│                                                     │
+│  7/8 sections · §2 out of scope · 25 tools          │
+╰─────────────────────────────────────────────────────╯
+
+3 of your 25 tools can act outside your app with no audit trail.
 ```
 
 ---
 
-## 60-second quickstart
+### 60-second quickstart
 
 ```bash
 pip install agentmint              # install
@@ -89,9 +82,10 @@ agentmint init .                   # scan + scorecard
 agentmint init . --write           # generate config + quickstart
 python quickstart_agentmint.py     # first signed receipt
 agentmint audit .                  # compliance score
-agentmint init . --output json     # machine-readable
+agentmint init . --output json     # machine-readable report
 ```
 
+---
 ---
 
 ## What you get
