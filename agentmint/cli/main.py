@@ -390,6 +390,18 @@ def _print_audit_results(result):
         print()
 
 
+@cli.command("test")
+@click.argument("directory", default=".", type=click.Path(exists=True))
+@click.option("--output", "output_dir", default=None, type=click.Path(),
+              help="Output directory for test reports.")
+def test_cmd(directory, output_dir):
+    """Run adversarial red team test suite (12 attacks)."""
+    from .redteam import run_test_suite, print_test_report
+    out = output_dir or str(Path(directory).resolve())
+    result = run_test_suite(output_dir=out)
+    print_test_report(result)
+
+
 def main():
     cli()
 
