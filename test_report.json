@@ -1,11 +1,11 @@
 {
   "version": "0.3.0",
-  "run_at": "2026-04-10T13:56:27.021246+00:00",
+  "run_at": "2026-04-10T21:40:02.657731+00:00",
   "total": 12,
   "caught": 10,
   "missed": 0,
   "known": 2,
-  "total_ms": 1.1043749999999908,
+  "total_ms": 1.2188329999999747,
   "results": [
     {
       "id": "OUT-001",
@@ -15,7 +15,7 @@
       "caught": true,
       "by": "output_shield",
       "verdict": "PASS",
-      "ms": 0.25045800000000895
+      "ms": 0.2902909999999981
     },
     {
       "id": "OUT-002",
@@ -25,7 +25,7 @@
       "caught": true,
       "by": "output_shield",
       "verdict": "PASS",
-      "ms": 0.09308400000002104
+      "ms": 0.10191699999995141
     },
     {
       "id": "OUT-003",
@@ -35,7 +35,7 @@
       "caught": true,
       "by": "output_shield",
       "verdict": "PASS",
-      "ms": 0.04808300000003207
+      "ms": 0.05175000000001706
     },
     {
       "id": "OUT-004",
@@ -45,7 +45,7 @@
       "caught": true,
       "by": "output_shield",
       "verdict": "PASS",
-      "ms": 0.061291999999990576
+      "ms": 0.06679200000003771
     },
     {
       "id": "OUT-005",
@@ -55,7 +55,7 @@
       "caught": true,
       "by": "output_shield",
       "verdict": "PASS",
-      "ms": 0.05108300000000732
+      "ms": 0.05533299999999075
     },
     {
       "id": "INP-001",
@@ -65,7 +65,7 @@
       "caught": true,
       "by": "input_shield",
       "verdict": "PASS",
-      "ms": 0.05525000000000668
+      "ms": 0.06250000000002087
     },
     {
       "id": "INP-002",
@@ -75,7 +75,7 @@
       "caught": true,
       "by": "input_shield",
       "verdict": "PASS",
-      "ms": 0.0235410000000158
+      "ms": 0.02566700000000699
     },
     {
       "id": "INP-003",
@@ -85,7 +85,7 @@
       "caught": true,
       "by": "input_shield",
       "verdict": "PASS",
-      "ms": 0.033915999999967195
+      "ms": 0.03787499999996502
     },
     {
       "id": "SCP-001",
@@ -95,7 +95,7 @@
       "caught": true,
       "by": "scope",
       "verdict": "PASS",
-      "ms": 0.003083000000014824
+      "ms": 0.0029579999999973516
     },
     {
       "id": "RTE-001",
@@ -105,7 +105,7 @@
       "caught": true,
       "by": "circuit_breaker",
       "verdict": "PASS",
-      "ms": 0.006541999999998271
+      "ms": 0.006916999999995177
     },
     {
       "id": "LIM-001",
@@ -115,7 +115,7 @@
       "caught": false,
       "by": "none",
       "verdict": "KNOWN_MISS",
-      "ms": 0.052959000000019074
+      "ms": 0.06066700000001424
     },
     {
       "id": "LIM-002",
@@ -125,7 +125,7 @@
       "caught": false,
       "by": "none",
       "verdict": "KNOWN_MISS",
-      "ms": 0.026000000000026002
+      "ms": 0.028375000000024908
     }
   ]
 }

@@ -2,7 +2,7 @@
 
 **Result:** 10/10 attacks caught  
 **Known limitations:** 2  
-**Duration:** 1.1ms
+**Duration:** 1.2ms
 
 | ID | Attack | Sev | Caught | By | Verdict |
 |:---|:-------|:----|:-------|:---|:--------|
