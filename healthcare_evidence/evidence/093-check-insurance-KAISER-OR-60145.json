@@ -1,7 +1,7 @@
 {
-  "id": "cfa9700e-7c1e-4921-a533-e6c8a88abd1a",
+  "id": "ffecf453-8222-4d22-9f70-e9d139189759",
   "type": "notarised_evidence",
-  "plan_id": "fe348d1e-049d-454f-aca2-92ef28c4510f",
+  "plan_id": "cd012bcd-8026-4264-b95e-dca0af226ffa",
   "agent": "claims-agent-rogue",
   "action": "check:insurance:KAISER-OR-60145",
   "in_policy": true,
@@ -11,50 +11,50 @@
     "tool": "check-insurance",
     "insurance_id": "KAISER-OR-60145"
   },
-  "observed_at": "2026-04-16T15:13:45.968715+00:00",
+  "observed_at": "2026-04-16T16:49:52.319195+00:00",
   "aiuc_controls": [
     "E015",
     "D003",
     "B001"
   ],
-  "key_id": "81acd0cb19099c5a",
+  "key_id": "c415f398f16ae2e7",
   "agent_key_id": "",
   "policy_hash": "396cdfe4d5e41716c57502d00577f2f13caf87594c186305187e6272a93581e9",
   "output_hash": "0dc7de62b436670e1b602c4838149e0945ba097f00aee8749ca38836228f3eba",
-  "session_id": "a1ad7520-96ee-4216-ac0c-dfd3ca5db8ce",
+  "session_id": "1588ea96-1798-4ce9-bfcf-a67973402e89",
   "session_trajectory": [
     {
       "action": "shield:scraped_record:PT-4498",
       "agent": "claims-agent-rogue",
       "in_policy": false,
-      "observed_at": "2026-04-16T15:13:45.966755+00:00"
+      "observed_at": "2026-04-16T16:49:52.318679+00:00"
     },
     {
       "action": "read:patient:PT-4821",
       "agent": "claims-agent-rogue",
       "in_policy": true,
-      "observed_at": "2026-04-16T15:13:45.966988+00:00"
+      "observed_at": "2026-04-16T16:49:52.318818+00:00"
     },
     {
       "action": "auto-deny:claim:CLM-8823",
       "agent": "claims-agent-rogue",
       "in_policy": false,
-      "observed_at": "2026-04-16T15:13:45.967636+00:00"
+      "observed_at": "2026-04-16T16:49:52.318946+00:00"
     },
     {
       "action": "export:all-patients",
       "agent": "claims-agent-rogue",
       "in_policy": false,
-      "observed_at": "2026-04-16T15:13:45.968199+00:00"
+      "observed_at": "2026-04-16T16:49:52.319072+00:00"
     },
     {
       "action": "check:insurance:KAISER-OR-60145",
       "agent": "claims-agent-rogue",
       "in_policy": true,
-      "observed_at": "2026-04-16T15:13:45.968715+00:00"
+      "observed_at": "2026-04-16T16:49:52.319195+00:00"
     }
   ],
-  "previous_receipt_hash": "7f3e9b16c0a184d55f2e02f31d5a9cd5e002d14a47a3520e917e922c886ee7f4",
-  "plan_signature": "f1947062bc0d8b61ffbdb805c1a103bf357e8f2a2c5acc3e442443d454817df762e467f987761f116798d1ca22d9e47bc666eb26de8204b678691466c7756707",
-  "signature": "0b4803355dc71f034956ebe17af02cd72674488673952c8922b83c168b9e77e1680e9b071be99febc7a5531c7ea99ab1fdc1b2721de0cde9fee7ad1610393a06"
+  "previous_receipt_hash": "93eee33a07649797c987d23ca786806660a924f40b4fc0e031cf2d125904ef10",
+  "plan_signature": "f21705337c3a01b7b5de777dffc7ed27797b781852d9883d9410abe22d156366702e7e9a19b1173cfd8528884be0ec737013c81b16b02ac98b721055cefb9a0b",
+  "signature": "b1c089cf5ecd4d99160662fe5a0c9127af308927a2f2013c4692800f6073fdd10a148e026b9e728971ae0003a2b9fbac635a88ae0d45a1868823f8704216430c"
 }

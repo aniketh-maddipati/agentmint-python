@@ -1,61 +1,61 @@
 {
-  "id": "144f6259-a98d-4871-ba56-179a7121b1c6",
+  "id": "6fadf39a-476b-4acf-a743-cb7ea9ff34dc",
   "type": "notarised_evidence",
-  "plan_id": "54b7b150-25c7-48f6-a911-00f98ef89f10",
+  "plan_id": "a9e88728-7538-41c2-97cc-4f26f5b794cb",
   "agent": "appeals-agent",
   "action": "appeal:claim:CLM-9920",
   "in_policy": false,
   "policy_reason": "matched checkpoint appeal:*",
-  "evidence_hash_sha512": "48101035958c7a0596260a516711136ef04f7816c44296f05f903ca4870b99aa09fe6bbdb11c39c2a012228f8071a17101c4e5e8d417d4ec7d14dfb884df0252",
+  "evidence_hash_sha512": "b60c2c81b2ac269b70d6f9b45edb56eaead465aa790a758efa1d8232ee2785dcae8e3224e1369cbafe8b737de5952fb32feadf31097dcf48aea321d3709770cc",
   "evidence": {
     "tool": "appeal",
     "claim_id": "CLM-9920",
     "delegated": true,
-    "parent_plan": "41b3bd2b"
+    "parent_plan": "cf1275ea"
   },
-  "observed_at": "2026-04-16T15:13:45.910902+00:00",
+  "observed_at": "2026-04-16T16:49:51.482937+00:00",
   "aiuc_controls": [
     "E015",
     "D003",
     "B001"
   ],
-  "key_id": "81acd0cb19099c5a",
+  "key_id": "c415f398f16ae2e7",
   "agent_key_id": "",
   "policy_hash": "e04b506e245eb4f2750b9626ac41c131aedc7b398b22ef0fb2870871e8f7663c",
   "output_hash": "0316c4e457869a96f5b252100ff11044f528cc26560a74708b6fe51ba54bf973",
-  "session_id": "a1ad7520-96ee-4216-ac0c-dfd3ca5db8ce",
+  "session_id": "1588ea96-1798-4ce9-bfcf-a67973402e89",
   "session_trajectory": [
     {
       "action": "read:patient:PT-4821",
       "agent": "claims-agent",
       "in_policy": true,
-      "observed_at": "2026-04-16T15:13:45.907006+00:00"
+      "observed_at": "2026-04-16T16:49:51.478466+00:00"
     },
     {
       "action": "check:insurance:BCBS-IL-98301",
       "agent": "claims-agent",
       "in_policy": true,
-      "observed_at": "2026-04-16T15:13:45.908204+00:00"
+      "observed_at": "2026-04-16T16:49:51.480271+00:00"
     },
     {
       "action": "submit:claim:CLM-9920",
       "agent": "claims-agent",
       "in_policy": true,
-      "observed_at": "2026-04-16T15:13:45.908650+00:00"
+      "observed_at": "2026-04-16T16:49:51.481021+00:00"
     },
     {
       "action": "appeal:claim:CLM-9920",
       "agent": "claims-agent",
       "in_policy": false,
-      "observed_at": "2026-04-16T15:13:45.909430+00:00"
+      "observed_at": "2026-04-16T16:49:51.481619+00:00"
     },
     {
       "action": "appeal:claim:CLM-9920",
       "agent": "appeals-agent",
       "in_policy": false,
-      "observed_at": "2026-04-16T15:13:45.910902+00:00"
+      "observed_at": "2026-04-16T16:49:51.482937+00:00"
     }
   ],
-  "plan_signature": "33eeec095f2d6fd46229acd2bbc6ed5d8b7c7c270b97eedca57b5567ed01126871188269d11cd2a15fe115ecde0e8429302d6fbef03b5080897da5b30d97a50d",
-  "signature": "f501e59c8de2c19256ea37554cb98e168c09485ca457c0c880d4c2951bbec084e6798cdd344abeadf04c6aa819729a341589750b2dc5dc342f4f2de2cf0adf0a"
+  "plan_signature": "9f4457dfa651debd08c54d76a8f1a53d24c295b373ab0fff1a27befdc523a4a3f660e02b7d1162879624cff5a63b977bcf04c560bd97c22430e52fb4b495060e",
+  "signature": "1eb611bf6131ff9c988bc73e3c8d73eb7dc0d97cdd85f03c0076562ac1af5c37a50582869b90e4fb082cb855ef7aff3acfb8ac941c7b89160970e566c9761c02"
 }

@@ -1,7 +1,7 @@
 {
-  "id": "3dcae6aa-8276-4a48-9fbf-df0054e29b6a",
+  "id": "940e5bd1-1a0d-422a-a9e0-628d1c0be037",
   "type": "notarised_evidence",
-  "plan_id": "fe348d1e-049d-454f-aca2-92ef28c4510f",
+  "plan_id": "cd012bcd-8026-4264-b95e-dca0af226ffa",
   "agent": "claims-agent-rogue",
   "action": "submit:claim:CLM-1047",
   "in_policy": true,
@@ -11,50 +11,50 @@
     "tool": "submit-claim",
     "claim_id": "CLM-1047"
   },
-  "observed_at": "2026-04-16T15:13:45.952064+00:00",
+  "observed_at": "2026-04-16T16:49:52.314121+00:00",
   "aiuc_controls": [
     "E015",
     "D003",
     "B001"
   ],
-  "key_id": "81acd0cb19099c5a",
+  "key_id": "c415f398f16ae2e7",
   "agent_key_id": "",
   "policy_hash": "396cdfe4d5e41716c57502d00577f2f13caf87594c186305187e6272a93581e9",
   "output_hash": "13cf122e24ad81bd79e8520ef9727c10964889553e3cb98b58abf8bfea228487",
-  "session_id": "a1ad7520-96ee-4216-ac0c-dfd3ca5db8ce",
+  "session_id": "1588ea96-1798-4ce9-bfcf-a67973402e89",
   "session_trajectory": [
     {
       "action": "read:patient:PT-2916",
       "agent": "claims-agent-rogue",
       "in_policy": true,
-      "observed_at": "2026-04-16T15:13:45.949809+00:00"
+      "observed_at": "2026-04-16T16:49:52.313311+00:00"
     },
     {
       "action": "auto-deny:claim:CLM-1047",
       "agent": "claims-agent-rogue",
       "in_policy": false,
-      "observed_at": "2026-04-16T15:13:45.950327+00:00"
+      "observed_at": "2026-04-16T16:49:52.313518+00:00"
     },
     {
       "action": "export:all-patients",
       "agent": "claims-agent-rogue",
       "in_policy": false,
-      "observed_at": "2026-04-16T15:13:45.951136+00:00"
+      "observed_at": "2026-04-16T16:49:52.313717+00:00"
     },
     {
       "action": "check:insurance:AETNA-TX-44102",
       "agent": "claims-agent-rogue",
       "in_policy": true,
-      "observed_at": "2026-04-16T15:13:45.951687+00:00"
+      "observed_at": "2026-04-16T16:49:52.313919+00:00"
     },
     {
       "action": "submit:claim:CLM-1047",
       "agent": "claims-agent-rogue",
       "in_policy": true,
-      "observed_at": "2026-04-16T15:13:45.952064+00:00"
+      "observed_at": "2026-04-16T16:49:52.314121+00:00"
     }
   ],
-  "previous_receipt_hash": "e38712dc1c29f18cc40b78ebbe8052f4821e1bd9f6f7966b5f54ee09a3dd5734",
-  "plan_signature": "f1947062bc0d8b61ffbdb805c1a103bf357e8f2a2c5acc3e442443d454817df762e467f987761f116798d1ca22d9e47bc666eb26de8204b678691466c7756707",
-  "signature": "aa738a8a63e71274dc6306da3cecc24d8da0d16be1a0baa91826676e95d277958cab58bf72acca207fff8b401685a2d92fec136be58bfeffd69c141ae7e20e03"
+  "previous_receipt_hash": "af8af6388c1bdd3a47681662a522ccc6a0d9f80ce3f94ab3d66369edb50b2548",
+  "plan_signature": "f21705337c3a01b7b5de777dffc7ed27797b781852d9883d9410abe22d156366702e7e9a19b1173cfd8528884be0ec737013c81b16b02ac98b721055cefb9a0b",
+  "signature": "858ac1c0e1fe717b145b1b25f711deb577eaff649b4b706b548020fd4004e0819b9419cdbe8b4f88b42a3836e6d62814360a36f9118240ff6c6e02883cf84e0c"
 }

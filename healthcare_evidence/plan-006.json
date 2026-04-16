@@ -1,5 +1,5 @@
 {
-  "id": "3900ff1f-1a41-4f34-b13b-9109dc63ba79",
+  "id": "5773319c-d85b-4d4b-8386-77f80cb6733d",
   "type": "plan",
   "user": "claims-supervisor@clinic.example.com",
   "action": "daily-claims-batch",
@@ -12,8 +12,8 @@
   "delegates_to": [
     "appeals-agent"
   ],
-  "issued_at": "2026-04-16T15:13:45.923805+00:00",
-  "expires_at": "2026-04-16T15:15:45.923805+00:00",
-  "key_id": "81acd0cb19099c5a",
-  "signature": "f734203f36d4f4b6367c7f3952828b2264ad773e358d46501abf984dade4aec2b6896b8823260b81d1e0b0922477e265fa559b0b71a099eecb74d8d257492503"
+  "issued_at": "2026-04-16T16:49:51.487426+00:00",
+  "expires_at": "2026-04-16T16:51:51.487426+00:00",
+  "key_id": "c415f398f16ae2e7",
+  "signature": "c061a467ab59f115564e239e6d3f44fd18fef35bbac21413bdd7a2f6b2e2819583b6c26c925b89675c054ae5fb09cec7fd5a80a76eb5725943e430b1f5b1ac04"
 }

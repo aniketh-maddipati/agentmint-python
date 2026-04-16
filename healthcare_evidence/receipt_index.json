@@ -1,34 +1,34 @@
 {
-  "created": "2026-04-16T15:13:46.007814+00:00",
+  "created": "2026-04-16T16:49:53.385867+00:00",
   "total_receipts": 122,
   "total_plans": 8,
   "in_policy": 80,
   "out_of_policy": 42,
   "delegation_tree": {
-    "plan_id": "41b3bd2b-755b-4e83-befe-54cf5db01a5d",
+    "plan_id": "cf1275ea-931f-4e19-ad38-d57579df18ce",
     "children": [
       {
-        "plan_id": "54b7b150-25c7-48f6-a911-00f98ef89f10",
+        "plan_id": "a9e88728-7538-41c2-97cc-4f26f5b794cb",
         "children": []
       },
       {
-        "plan_id": "9a924ca8-6698-48bb-9a73-7fd11679f0a6",
+        "plan_id": "18565ea6-6a83-46b4-b87f-d01b8080c24a",
         "children": []
       },
       {
-        "plan_id": "9643141b-389a-4d6b-9833-70b4c0d29312",
+        "plan_id": "2b66e440-4e05-4fe8-a221-f27fa3bc417e",
         "children": []
       },
       {
-        "plan_id": "3900ff1f-1a41-4f34-b13b-9109dc63ba79",
+        "plan_id": "5773319c-d85b-4d4b-8386-77f80cb6733d",
         "children": []
       },
       {
-        "plan_id": "fd15e696-d125-4d1f-b942-d4115c35dc9a",
+        "plan_id": "b862688b-c386-4565-b4c4-f987f741fe6c",
         "children": []
       },
       {
-        "plan_id": "c163e127-bea3-4077-8840-3bf41e69c072",
+        "plan_id": "0f157bfc-c16d-4100-88b3-ffd10d63ff86",
         "children": []
       }
     ]

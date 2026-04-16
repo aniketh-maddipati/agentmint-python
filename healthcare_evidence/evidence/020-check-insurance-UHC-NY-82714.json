@@ -1,7 +1,7 @@
 {
-  "id": "87a251d9-b888-4103-8ee7-030638a0d154",
+  "id": "2663eb93-4ce7-47fb-af58-588d301e87af",
   "type": "notarised_evidence",
-  "plan_id": "41b3bd2b-755b-4e83-befe-54cf5db01a5d",
+  "plan_id": "cf1275ea-931f-4e19-ad38-d57579df18ce",
   "agent": "claims-agent",
   "action": "check:insurance:UHC-NY-82714",
   "in_policy": true,
@@ -11,50 +11,50 @@
     "tool": "check-insurance",
     "insurance_id": "UHC-NY-82714"
   },
-  "observed_at": "2026-04-16T15:13:45.922318+00:00",
+  "observed_at": "2026-04-16T16:49:51.486991+00:00",
   "aiuc_controls": [
     "E015",
     "D003",
     "B001"
   ],
-  "key_id": "81acd0cb19099c5a",
+  "key_id": "c415f398f16ae2e7",
   "agent_key_id": "",
   "policy_hash": "2a2c7fe42a9fa8ded7eb28d68b82279ebf7691d68866a8e60528b067333412fb",
   "output_hash": "c39f848f1ae02dad815cd7d0af3b5f5dbe1ef8b0ab1d035e85323892a9b648df",
-  "session_id": "a1ad7520-96ee-4216-ac0c-dfd3ca5db8ce",
+  "session_id": "1588ea96-1798-4ce9-bfcf-a67973402e89",
   "session_trajectory": [
     {
       "action": "appeal:claim:CLM-3384",
       "agent": "claims-agent",
       "in_policy": false,
-      "observed_at": "2026-04-16T15:13:45.919250+00:00"
+      "observed_at": "2026-04-16T16:49:51.486332+00:00"
     },
     {
       "action": "appeal:claim:CLM-3384",
       "agent": "appeals-agent",
       "in_policy": false,
-      "observed_at": "2026-04-16T15:13:45.920317+00:00"
+      "observed_at": "2026-04-16T16:49:51.486554+00:00"
     },
     {
       "action": "write:summary:batch-2026-04",
       "agent": "claims-agent",
       "in_policy": true,
-      "observed_at": "2026-04-16T15:13:45.920758+00:00"
+      "observed_at": "2026-04-16T16:49:51.486698+00:00"
     },
     {
       "action": "read:patient:PT-6201",
       "agent": "claims-agent",
       "in_policy": true,
-      "observed_at": "2026-04-16T15:13:45.921802+00:00"
+      "observed_at": "2026-04-16T16:49:51.486843+00:00"
     },
     {
       "action": "check:insurance:UHC-NY-82714",
       "agent": "claims-agent",
       "in_policy": true,
-      "observed_at": "2026-04-16T15:13:45.922318+00:00"
+      "observed_at": "2026-04-16T16:49:51.486991+00:00"
     }
   ],
-  "previous_receipt_hash": "d08c56ebd3b25be053b933bd90f13fd5cac6b7aa4b0057557bc12d3eda9b2015",
-  "plan_signature": "a77f65ea6ff04dbd6fca98a449c4fe0751ac50ce375401db080a29805b1b9c36e3e8cc417c6495957afaf24e74dcdc80e975fe61d1a0c40a487c991acf9c1e03",
-  "signature": "ce240c36ea02f50b51edfa0ae0d08427bc683c3a0ace070fa1515230d7090439a1923ecc5fe88be4178ce7ad01421c4ad4e8e5df4f31db09e7faf956f3bc8302"
+  "previous_receipt_hash": "1321f6abe329c2925b14163211b7d0923b4f7568e340ce7140ab5332addc6716",
+  "plan_signature": "44192b773b47355aa245f2316f717fcb232b74f0e645a3fc643678895f5853f902d68647c8b2763aa36967820f176982a5bbe1702db5368e17383864fdd01c03",
+  "signature": "309414a4b9a654d1613aaf8d11ced3d85c3a3ad1f7534924ba6f0b241dcc40845e8c082a2d34c762d407b05f0c60bc70d45d712f0936fe9ab1801affd69f420b"
 }

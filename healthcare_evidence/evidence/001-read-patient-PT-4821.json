@@ -1,7 +1,7 @@
 {
-  "id": "185e736b-5f29-41b0-a513-8f9c830850f3",
+  "id": "bdeb68a8-0c4a-4d64-8a95-8cd7b9d88246",
   "type": "notarised_evidence",
-  "plan_id": "41b3bd2b-755b-4e83-befe-54cf5db01a5d",
+  "plan_id": "cf1275ea-931f-4e19-ad38-d57579df18ce",
   "agent": "claims-agent",
   "action": "read:patient:PT-4821",
   "in_policy": true,
@@ -11,25 +11,25 @@
     "tool": "read-patient",
     "patient_id": "PT-4821"
   },
-  "observed_at": "2026-04-16T15:13:45.907006+00:00",
+  "observed_at": "2026-04-16T16:49:51.478466+00:00",
   "aiuc_controls": [
     "E015",
     "D003",
     "B001"
   ],
-  "key_id": "81acd0cb19099c5a",
+  "key_id": "c415f398f16ae2e7",
   "agent_key_id": "",
   "policy_hash": "2a2c7fe42a9fa8ded7eb28d68b82279ebf7691d68866a8e60528b067333412fb",
   "output_hash": "4957b3438ad32211bd49e8aded02b876483f701a469cc5f5d6089f9cfcc84d0a",
-  "session_id": "a1ad7520-96ee-4216-ac0c-dfd3ca5db8ce",
+  "session_id": "1588ea96-1798-4ce9-bfcf-a67973402e89",
   "session_trajectory": [
     {
       "action": "read:patient:PT-4821",
       "agent": "claims-agent",
       "in_policy": true,
-      "observed_at": "2026-04-16T15:13:45.907006+00:00"
+      "observed_at": "2026-04-16T16:49:51.478466+00:00"
     }
   ],
-  "plan_signature": "a77f65ea6ff04dbd6fca98a449c4fe0751ac50ce375401db080a29805b1b9c36e3e8cc417c6495957afaf24e74dcdc80e975fe61d1a0c40a487c991acf9c1e03",
-  "signature": "7de1d0e926c68ef16859c13cdf2f1dcb6ff48c550340405fc74c99d4b56795367e195fa49b2820f5f04098481a2576770508efd494d9c9517f43f78a0586e706"
+  "plan_signature": "44192b773b47355aa245f2316f717fcb232b74f0e645a3fc643678895f5853f902d68647c8b2763aa36967820f176982a5bbe1702db5368e17383864fdd01c03",
+  "signature": "ca868e51b9d2258cad4c6b5d3f891d71cb931463ba56b8a127d9ad185dd36afa35ffb7295b103b9e33bf94550dbef8eea1822b2746a1c3f4e1eeaaa8c221d40c"
 }
