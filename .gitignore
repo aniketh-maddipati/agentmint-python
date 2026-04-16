@@ -47,3 +47,37 @@ healthcare_evidence/healthcare_evidence/
 prescient_evidence/
 agentmint_decrypt_evidence/
 agentmint_uproot_evidence/
+
+# Generated evidence
+recon_agentmint_evidence/
+healthcare_evidence/
+*.tsq
+*.tsr
+*.pem
+*.crt
+receipt_index.json
+plan.json
+receipts/
+VERIFY.sh
+verify_sigs.py
+
+# Generated evidence
+recon_agentmint_evidence/
+healthcare_evidence/
+evidence_output/
+receipts/
+*.tsq
+*.tsr
+freetsa_cacert.pem
+freetsa_tsa.crt
+plan.json
+public_key.pem
+receipt_index.json
+VERIFY.sh
+verify_sigs.py
+
+# Build
+build/
+dist/
+*.egg-info/
+__pycache__/
