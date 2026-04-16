@@ -1,0 +1,42 @@
+{
+  "id": "e8899465-fc2f-4d56-908e-7cd568112f53",
+  "type": "notarised_evidence",
+  "plan_id": "41b3bd2b-755b-4e83-befe-54cf5db01a5d",
+  "agent": "claims-agent",
+  "action": "check:insurance:BCBS-IL-98301",
+  "in_policy": true,
+  "policy_reason": "matched scope check:insurance:*",
+  "evidence_hash_sha512": "48da00c7e79dcf75725f9762a2b5d0900fcad191f0bb16066af54507ba9e206c9035a01ff9b6c63ee08f1612183ad0f748f79abe14528fd8b3ce7cb5dff51479",
+  "evidence": {
+    "tool": "check-insurance",
+    "insurance_id": "BCBS-IL-98301"
+  },
+  "observed_at": "2026-04-16T15:13:45.908204+00:00",
+  "aiuc_controls": [
+    "E015",
+    "D003",
+    "B001"
+  ],
+  "key_id": "81acd0cb19099c5a",
+  "agent_key_id": "",
+  "policy_hash": "2a2c7fe42a9fa8ded7eb28d68b82279ebf7691d68866a8e60528b067333412fb",
+  "output_hash": "c39f848f1ae02dad815cd7d0af3b5f5dbe1ef8b0ab1d035e85323892a9b648df",
+  "session_id": "a1ad7520-96ee-4216-ac0c-dfd3ca5db8ce",
+  "session_trajectory": [
+    {
+      "action": "read:patient:PT-4821",
+      "agent": "claims-agent",
+      "in_policy": true,
+      "observed_at": "2026-04-16T15:13:45.907006+00:00"
+    },
+    {
+      "action": "check:insurance:BCBS-IL-98301",
+      "agent": "claims-agent",
+      "in_policy": true,
+      "observed_at": "2026-04-16T15:13:45.908204+00:00"
+    }
+  ],
+  "previous_receipt_hash": "404f8b14a5612a35d54a42c1a8cacbce728cd82a057828fa5b084aa6bc0124b8",
+  "plan_signature": "a77f65ea6ff04dbd6fca98a449c4fe0751ac50ce375401db080a29805b1b9c36e3e8cc417c6495957afaf24e74dcdc80e975fe61d1a0c40a487c991acf9c1e03",
+  "signature": "18cc6ede292cb7d2d239fa4735a44e39d45dbe654e40fc16f04e5d5b3e828a55b4f33b32e66425deab0d83572c886bfd23c150981db7368789a58ed744abc908"
+}

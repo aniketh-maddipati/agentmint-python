@@ -1,0 +1,36 @@
+{
+  "created": "2026-04-16T15:13:46.007814+00:00",
+  "total_receipts": 122,
+  "total_plans": 8,
+  "in_policy": 80,
+  "out_of_policy": 42,
+  "delegation_tree": {
+    "plan_id": "41b3bd2b-755b-4e83-befe-54cf5db01a5d",
+    "children": [
+      {
+        "plan_id": "54b7b150-25c7-48f6-a911-00f98ef89f10",
+        "children": []
+      },
+      {
+        "plan_id": "9a924ca8-6698-48bb-9a73-7fd11679f0a6",
+        "children": []
+      },
+      {
+        "plan_id": "9643141b-389a-4d6b-9833-70b4c0d29312",
+        "children": []
+      },
+      {
+        "plan_id": "3900ff1f-1a41-4f34-b13b-9109dc63ba79",
+        "children": []
+      },
+      {
+        "plan_id": "fd15e696-d125-4d1f-b942-d4115c35dc9a",
+        "children": []
+      },
+      {
+        "plan_id": "c163e127-bea3-4077-8840-3bf41e69c072",
+        "children": []
+      }
+    ]
+  }
+}

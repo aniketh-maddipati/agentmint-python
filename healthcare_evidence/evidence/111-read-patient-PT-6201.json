@@ -1,0 +1,60 @@
+{
+  "id": "9a26c21e-8ac2-4f45-bd10-11b2f0767e8a",
+  "type": "notarised_evidence",
+  "plan_id": "fe348d1e-049d-454f-aca2-92ef28c4510f",
+  "agent": "claims-agent-rogue",
+  "action": "read:patient:PT-6201",
+  "in_policy": true,
+  "policy_reason": "matched scope read:patient:*",
+  "evidence_hash_sha512": "04a8ef61f148edb941f4385d2d895e3ce7f596adb3a502289b5354c3d57e745972cfc1895ab0fde774cfa45a4e4070e08b6511534f030b611b4d27599e69b5ff",
+  "evidence": {
+    "tool": "read-patient",
+    "patient_id": "PT-6201",
+    "unauthorized": true
+  },
+  "observed_at": "2026-04-16T15:13:45.979708+00:00",
+  "aiuc_controls": [
+    "E015",
+    "D003",
+    "B001"
+  ],
+  "key_id": "81acd0cb19099c5a",
+  "agent_key_id": "",
+  "policy_hash": "396cdfe4d5e41716c57502d00577f2f13caf87594c186305187e6272a93581e9",
+  "session_id": "a1ad7520-96ee-4216-ac0c-dfd3ca5db8ce",
+  "session_trajectory": [
+    {
+      "action": "check:insurance:BCBS-GA-37291",
+      "agent": "claims-agent-rogue",
+      "in_policy": true,
+      "observed_at": "2026-04-16T15:13:45.977320+00:00"
+    },
+    {
+      "action": "submit:claim:CLM-6105",
+      "agent": "claims-agent-rogue",
+      "in_policy": true,
+      "observed_at": "2026-04-16T15:13:45.977707+00:00"
+    },
+    {
+      "action": "read:patient:PT-1683",
+      "agent": "claims-agent-rogue",
+      "in_policy": true,
+      "observed_at": "2026-04-16T15:13:45.978530+00:00"
+    },
+    {
+      "action": "shield:scraped_record:PT-1683",
+      "agent": "claims-agent-rogue",
+      "in_policy": false,
+      "observed_at": "2026-04-16T15:13:45.979549+00:00"
+    },
+    {
+      "action": "read:patient:PT-6201",
+      "agent": "claims-agent-rogue",
+      "in_policy": true,
+      "observed_at": "2026-04-16T15:13:45.979708+00:00"
+    }
+  ],
+  "previous_receipt_hash": "af8dad2ce15f45af957c9865550352a8abd76f312a9d511a01ba4de9cf3d486a",
+  "plan_signature": "f1947062bc0d8b61ffbdb805c1a103bf357e8f2a2c5acc3e442443d454817df762e467f987761f116798d1ca22d9e47bc666eb26de8204b678691466c7756707",
+  "signature": "23dbccfaed540580f265116f5f64eda71f43247bc80dba1d7778b7705a48105388d492ae47cea4408829bd1bc6bf41d897213969b36712fc529fc089adc0d50b"
+}

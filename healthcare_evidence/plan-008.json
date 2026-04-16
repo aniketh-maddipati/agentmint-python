@@ -1,0 +1,19 @@
+{
+  "id": "c163e127-bea3-4077-8840-3bf41e69c072",
+  "type": "plan",
+  "user": "claims-supervisor@clinic.example.com",
+  "action": "daily-claims-batch",
+  "scope": [
+    "appeal:claim:CLM-8823"
+  ],
+  "checkpoints": [
+    "appeal:*"
+  ],
+  "delegates_to": [
+    "appeals-agent"
+  ],
+  "issued_at": "2026-04-16T15:13:45.932816+00:00",
+  "expires_at": "2026-04-16T15:15:45.932816+00:00",
+  "key_id": "81acd0cb19099c5a",
+  "signature": "f6898334b21c9ac9e96a5e3a5d77594c78d4cb0f8b32b86160f537e8c6fa7c58b0d5906da72162ec0425c4549e71d5210e830229cacd4352a501b0de6993aa01"
+}

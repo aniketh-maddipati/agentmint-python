@@ -1,0 +1,60 @@
+{
+  "id": "93aa0838-340f-4e89-977e-6b8966485c68",
+  "type": "notarised_evidence",
+  "plan_id": "41b3bd2b-755b-4e83-befe-54cf5db01a5d",
+  "agent": "claims-agent",
+  "action": "appeal:claim:CLM-8823",
+  "in_policy": false,
+  "policy_reason": "matched checkpoint appeal:*",
+  "evidence_hash_sha512": "19a2ca15bdee8d2b11f26423637a2a799a673084c0701f0103866b77edb6397af676ac74d468c29d427ad0a2448d73bdd94d26738abb622e37082bfca6225082",
+  "evidence": {
+    "tool": "appeal",
+    "claim_id": "CLM-8823",
+    "denial_code": "CO-50"
+  },
+  "observed_at": "2026-04-16T15:13:45.932273+00:00",
+  "aiuc_controls": [
+    "E015",
+    "D003",
+    "B001"
+  ],
+  "key_id": "81acd0cb19099c5a",
+  "agent_key_id": "",
+  "policy_hash": "2a2c7fe42a9fa8ded7eb28d68b82279ebf7691d68866a8e60528b067333412fb",
+  "session_id": "a1ad7520-96ee-4216-ac0c-dfd3ca5db8ce",
+  "session_trajectory": [
+    {
+      "action": "write:summary:batch-2026-04",
+      "agent": "claims-agent",
+      "in_policy": true,
+      "observed_at": "2026-04-16T15:13:45.930253+00:00"
+    },
+    {
+      "action": "read:patient:PT-4498",
+      "agent": "claims-agent",
+      "in_policy": true,
+      "observed_at": "2026-04-16T15:13:45.931113+00:00"
+    },
+    {
+      "action": "check:insurance:KAISER-OR-60145",
+      "agent": "claims-agent",
+      "in_policy": true,
+      "observed_at": "2026-04-16T15:13:45.931502+00:00"
+    },
+    {
+      "action": "submit:claim:CLM-8823",
+      "agent": "claims-agent",
+      "in_policy": true,
+      "observed_at": "2026-04-16T15:13:45.931894+00:00"
+    },
+    {
+      "action": "appeal:claim:CLM-8823",
+      "agent": "claims-agent",
+      "in_policy": false,
+      "observed_at": "2026-04-16T15:13:45.932273+00:00"
+    }
+  ],
+  "previous_receipt_hash": "031e3c9e63f5e6ac28069ac6f5e80995ca9e74b8a52ba21f5673ac25e80f726b",
+  "plan_signature": "a77f65ea6ff04dbd6fca98a449c4fe0751ac50ce375401db080a29805b1b9c36e3e8cc417c6495957afaf24e74dcdc80e975fe61d1a0c40a487c991acf9c1e03",
+  "signature": "4e26ba856e6546a21ede89ad26ce99657d59d04d26eb4e2deb778ecef4b7204e165df62d9972ec638b3aa273b812ca897042af9bb72d1998c465d39d11561200"
+}

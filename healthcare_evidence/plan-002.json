@@ -1,0 +1,23 @@
+{
+  "id": "fe348d1e-049d-454f-aca2-92ef28c4510f",
+  "type": "plan",
+  "user": "claims-supervisor@clinic.example.com",
+  "action": "daily-claims-batch",
+  "scope": [
+    "read:patient:*",
+    "check:insurance:*",
+    "submit:claim:*",
+    "appeal:*",
+    "write:summary:*"
+  ],
+  "checkpoints": [
+    "appeal:*"
+  ],
+  "delegates_to": [
+    "claims-agent-rogue"
+  ],
+  "issued_at": "2026-04-16T15:13:45.905833+00:00",
+  "expires_at": "2026-04-16T16:13:45.905833+00:00",
+  "key_id": "81acd0cb19099c5a",
+  "signature": "f1947062bc0d8b61ffbdb805c1a103bf357e8f2a2c5acc3e442443d454817df762e467f987761f116798d1ca22d9e47bc666eb26de8204b678691466c7756707"
+}

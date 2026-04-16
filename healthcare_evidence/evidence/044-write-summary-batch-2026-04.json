@@ -1,0 +1,60 @@
+{
+  "id": "f0a7a8a8-51bb-4377-96d4-abd3c6e65217",
+  "type": "notarised_evidence",
+  "plan_id": "41b3bd2b-755b-4e83-befe-54cf5db01a5d",
+  "agent": "claims-agent",
+  "action": "write:summary:batch-2026-04",
+  "in_policy": true,
+  "policy_reason": "matched scope write:summary:*",
+  "evidence_hash_sha512": "92b46dea6c6210dc85fa4fdf3830e85467dd1943c7efd362a929ed906100c4b4b0a06d1e8a814a69a215c7bebaafff3d0aa4a2f778ded98d8b7a0a9ec3a3de3e",
+  "evidence": {
+    "tool": "write-summary",
+    "batch": "2026-04"
+  },
+  "observed_at": "2026-04-16T15:13:45.938537+00:00",
+  "aiuc_controls": [
+    "E015",
+    "D003",
+    "B001"
+  ],
+  "key_id": "81acd0cb19099c5a",
+  "agent_key_id": "",
+  "policy_hash": "2a2c7fe42a9fa8ded7eb28d68b82279ebf7691d68866a8e60528b067333412fb",
+  "output_hash": "b28a5c049e359de376c58ab60cdd636406ee143f87bc4fecf42c38b34fb8cf51",
+  "session_id": "a1ad7520-96ee-4216-ac0c-dfd3ca5db8ce",
+  "session_trajectory": [
+    {
+      "action": "write:summary:batch-2026-04",
+      "agent": "claims-agent",
+      "in_policy": true,
+      "observed_at": "2026-04-16T15:13:45.936600+00:00"
+    },
+    {
+      "action": "read:patient:PT-8107",
+      "agent": "claims-agent",
+      "in_policy": true,
+      "observed_at": "2026-04-16T15:13:45.937377+00:00"
+    },
+    {
+      "action": "check:insurance:BCBS-GA-37291",
+      "agent": "claims-agent",
+      "in_policy": true,
+      "observed_at": "2026-04-16T15:13:45.937773+00:00"
+    },
+    {
+      "action": "submit:claim:CLM-6105",
+      "agent": "claims-agent",
+      "in_policy": true,
+      "observed_at": "2026-04-16T15:13:45.938157+00:00"
+    },
+    {
+      "action": "write:summary:batch-2026-04",
+      "agent": "claims-agent",
+      "in_policy": true,
+      "observed_at": "2026-04-16T15:13:45.938537+00:00"
+    }
+  ],
+  "previous_receipt_hash": "204e954f4e5f59e3bcb1a94b5ad25bad906082641fea5e4d2d338c3d5bedf11c",
+  "plan_signature": "a77f65ea6ff04dbd6fca98a449c4fe0751ac50ce375401db080a29805b1b9c36e3e8cc417c6495957afaf24e74dcdc80e975fe61d1a0c40a487c991acf9c1e03",
+  "signature": "3e9d26679d21faec3d1a3819b6ed9e0568468a6895cf624fcb1f6abe73f51fc6778817f55036c55f70014bad5b187c1f1c4a08abe0e55b3b85b5191fe9b9040a"
+}

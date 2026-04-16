@@ -1,0 +1,59 @@
+{
+  "id": "b6adebd5-fcbc-4de0-be88-8868085e2a9a",
+  "type": "notarised_evidence",
+  "plan_id": "fe348d1e-049d-454f-aca2-92ef28c4510f",
+  "agent": "claims-agent-rogue",
+  "action": "export:all-patients",
+  "in_policy": false,
+  "policy_reason": "no scope pattern matched",
+  "evidence_hash_sha512": "b12a2938e682f636e6387f400561d650573ba5b148e5476806af36a5b1c1a29baab4d8d5c4603fb23090ef80f68a804dc1616eab73b03b938c0bec86469dd5d8",
+  "evidence": {
+    "tool": "export-all",
+    "target": "all-patients"
+  },
+  "observed_at": "2026-04-16T15:13:45.963649+00:00",
+  "aiuc_controls": [
+    "E015",
+    "D003",
+    "B001"
+  ],
+  "key_id": "81acd0cb19099c5a",
+  "agent_key_id": "",
+  "policy_hash": "396cdfe4d5e41716c57502d00577f2f13caf87594c186305187e6272a93581e9",
+  "session_id": "a1ad7520-96ee-4216-ac0c-dfd3ca5db8ce",
+  "session_trajectory": [
+    {
+      "action": "read:patient:PT-7045",
+      "agent": "claims-agent-rogue",
+      "in_policy": true,
+      "observed_at": "2026-04-16T15:13:45.961370+00:00"
+    },
+    {
+      "action": "shield:scraped_record:PT-7045",
+      "agent": "claims-agent-rogue",
+      "in_policy": false,
+      "observed_at": "2026-04-16T15:13:45.962412+00:00"
+    },
+    {
+      "action": "read:patient:PT-8834",
+      "agent": "claims-agent-rogue",
+      "in_policy": true,
+      "observed_at": "2026-04-16T15:13:45.962573+00:00"
+    },
+    {
+      "action": "auto-deny:claim:CLM-7791",
+      "agent": "claims-agent-rogue",
+      "in_policy": false,
+      "observed_at": "2026-04-16T15:13:45.963110+00:00"
+    },
+    {
+      "action": "export:all-patients",
+      "agent": "claims-agent-rogue",
+      "in_policy": false,
+      "observed_at": "2026-04-16T15:13:45.963649+00:00"
+    }
+  ],
+  "previous_receipt_hash": "8ac357b98f1e056415d5276f759966e9d49852fac7ae4d3271e2f85bdaeb6f49",
+  "plan_signature": "f1947062bc0d8b61ffbdb805c1a103bf357e8f2a2c5acc3e442443d454817df762e467f987761f116798d1ca22d9e47bc666eb26de8204b678691466c7756707",
+  "signature": "c0fb6ba8202cff9172da5a4aa5f6ab80ecadeade895cccc549ae20411229b70c837d6d42a025083f75e67b307c238ecd92e2ad5bcc6a0b12d19f860dcb65bc0b"
+}
