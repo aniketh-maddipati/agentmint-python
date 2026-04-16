@@ -6,7 +6,7 @@ AI agents are processing insurance claims, screening transactions, filing appeal
 
 Every tool call → Ed25519 signed receipt → SHA-256 chained to the last one. **Anyone verifies the full chain with `openssl`. No AgentMint needed.**
 
-🔗 [OWASP Listed](https://github.com/OWASP/www-project-agentic-skills-top-10/blob/main/solutions.md) · 📄 [MIT License](LICENSE) · 🐍 Python 3.8+ · ✅ 324 tests passing
+🔗 [OWASP Listed](https://github.com/OWASP/www-project-agentic-skills-top-10/blob/main/solutions.md) · 📄 [MIT License](LICENSE) · 🐍 Python 3.8+ · ✅ Mapped to AIUC-1
 
 **Got an agent? [I'll wire it in an hour.](#got-an-agent)**
 
