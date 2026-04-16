@@ -41,3 +41,9 @@ quickstart_evidence/
 
 # Generated evidence (regenerate with python3 generate_evidence.py)
 agentmint_evidence/
+
+healthcare_demo/evidence_output/
+healthcare_evidence/healthcare_evidence/
+prescient_evidence/
+agentmint_decrypt_evidence/
+agentmint_uproot_evidence/
