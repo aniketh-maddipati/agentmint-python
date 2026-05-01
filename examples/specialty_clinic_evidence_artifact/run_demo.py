@@ -162,13 +162,13 @@ def phase_4() -> None:
     header(4, "Verify offline with openssl")
     cmd = [
         "openssl", "pkeyutl", "-verify",
-        "-pubin", "-inkey", str(KEYS / "public.pem"),
-        "-rawin", "-in", str(RECEIPTS / "00001.json"),
-        "-sigfile", str(RECEIPTS / "00001.json.sig"),
+        "-pubin", "-inkey", "keys/public.pem",
+        "-rawin", "-in", "receipts/00001.json",
+        "-sigfile", "receipts/00001.json.sig",
     ]
     console.print(f"[dim]$ {' '.join(cmd)}[/dim]")
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        result = subprocess.run(cmd, cwd=str(ROOT), capture_output=True, text=True, timeout=10)
     except FileNotFoundError:
         fail("openssl not found on PATH")
         sys.exit(1)
@@ -188,14 +188,13 @@ def control_table() -> None:
     table.add_column("Framework", style="cyan", no_wrap=True)
     table.add_column("Citation", style="bold")
     table.add_column("What this receipt provides")
-    table.add_row("HIPAA", "\u00a7164.312(b)", "Audit controls -- signed action record")
+    table.add_row("HIPAA", "\u00a7164.312(b)", "Audit controls -- per-action signed record (deployment)")
     table.add_row("HIPAA", "\u00a7164.312(c)(1)", "Integrity -- tamper detection via signature")
-    table.add_row("HIPAA", "\u00a7164.312(d)", "Authentication -- agent identity bound to action")
-    table.add_row("HIPAA", "\u00a7164.316(b)(2)(i)", "Retention -- append-only customer-held store")
-    table.add_row("HITRUST", "09.aa", "Audit logging via signed-receipt primitive")
+    table.add_row("HIPAA", "\u00a7164.312(d)", "Authentication -- action signed by customer-held key")
+    table.add_row("HITRUST", "09.aa", "Audit logging primitive (deployment wraps via decorator)")
     table.add_row("HITRUST", "09.ac", "Log protection -- customer-held key prevents edits")
-    table.add_row("HITRUST", "09.ad", "Operator logs -- same primitive across action types")
-    table.add_row("HITRUST", "06.i", "Audit considerations -- offline verification by auditor")
+    table.add_row("HITRUST", "09.ad", "Admin/operator logs use same primitive (deployment)")
+    table.add_row("HITRUST", "06.i", "Offline auditor verification with openssl alone")
     console.print()
     console.print(table)
     console.print("[dim]Full mappings: controls.md[/dim]")
