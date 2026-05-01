@@ -1,46 +1,16 @@
 # AgentMint :: signed receipts for AI agent actions
 
-When an agent submits a prior auth, routes a referral, or verifies
-eligibility, someone may need to prove what it did — weeks or months
-later, when a denial, audit, or dispute lands. Today that answer is
-usually "let me check our logs and get back to you." Those logs come
-from the vendor running the agent.
+**Small teams should have big-company trust. Period.**
 
-This demo shows the alternative: a 5-file primitive that produces
-Ed25519-signed, offline-verifiable receipts for agent actions in
-healthcare admin workflows. The clinic holds the key. The vendor
-never sees it. An auditor verifies with `openssl` alone.
+**Goal:** get the first agent deal closed faster, with trust that compounds across every deal after.
 
-## The demo
+A working primitive for cryptographic evidence of what your AI agent did. Customer holds the key. Vendor never sees it. Anyone verifies offline. Healthcare admin actions as the example — the primitive works for any agent action.
 
-```bash
-pip install -r requirements.txt
-python run_demo.py && bash verify.sh
-```
+---
 
-Requires Python 3.8+, openssl 3.0+, jq.
-Phase 1 :: Generate Ed25519 keypair
-✓ Wrote keys/private.pem and keys/public.pem
-Customer holds the key, vendor never sees it.
-Phase 2 :: Construct payload :: hash with SHA-256
-✓ Action: prior_authorization_submission
-✓ Subject ref (hashed, no PHI): 6a64cb593d3ba4c9...
-✓ Payload SHA-256: 56d96345fff0d650...
-Phase 3 :: Build receipt :: sign with Ed25519
-✓ Wrote receipts/00001.json (canonical bytes)
-✓ Wrote receipts/00001.json.sig (raw 64-byte Ed25519 signature)
-✓ Wrote receipts/00001.json.payload (canonical payload bytes)
-Phase 4 :: Verify offline with openssl
-$ openssl pkeyutl -verify -pubin -inkey keys/public.pem -rawin -in receipts/00001.json -sigfile receipts/00001.json.sig
-✓ Signature Verified Successfully
-✓ Receipt verifies offline. No AgentMint binary required.
+## The receipt
 
-Flip one byte of the payload, run `bash verify.sh`, watch verification fail.
-Restore the byte, watch it pass. That's the "we'd notice" claim, made true.
-
-## What the receipt contains
-
-Zero PHI. Hashes only. Same structure for every workflow.
+`sample_output/receipts/00001.json`:
 
 ```json
 {
@@ -57,50 +27,92 @@ Zero PHI. Hashes only. Same structure for every workflow.
 }
 ```
 
-The receipt binds the action to a customer-held key. The primitive is
-workflow-agnostic — change the action string and payload schema for
-any healthcare admin workflow. It is not a SOC 2, HITRUST cert, or
-audit-logging system. It's the evidence layer those products don't
-produce on their own. Maps to HIPAA Security Rule and HITRUST CSF v11
-— see [controls.md](controls.md).
+Zero PHI — hashes only. Signed with Ed25519. Chain-linked via `previous_receipt_hash`.
 
-## How the key works
+---
 
-- Customer generates the keypair, holds the private key on their infrastructure
-- Agent signs by calling the customer's signing endpoint — never holds the key bytes
-- Plugs into AWS KMS, GCP KMS, or HashiCorp Vault for HSM-backed production
-- *GTM:* lets you say "customer holds the key" with a straight face in a security review
-- *Security:* private key never crosses a vendor boundary; same trust model as Mastercard's agent receipt spec
+## Verify it
 
-## How verification works
+`sample_output/` has a real receipt, signature, payload, and public key already generated. Verify with one command — no Python:
 
-- Auditor receives a tarball: receipts, public key, `verify.sh`
-- Three checks run with openssl + jq alone: signature, payload hash, chain link
-- Pass/fail is binary, deterministic, reproducible offline
-- *GTM:* compresses the agent portion of an audit from days to minutes
-- *Security:* no vendor binary, no network call, no shared secret; works air-gapped
+```bash
+cd sample_output
+bash ../verify.sh
+```
+Step 1 :: Ed25519 signature  → OK
+Step 2 :: payload SHA-256    → OK
+Step 3 :: result             → Receipt verifies offline
 
-## Where this applies
+`openssl` + `jq` + `sha256sum`. Air-gapped, deterministic, anyone with the public key can do it.
 
-The demo uses prior authorization. Same primitive covers:
+---
 
-1. **Prior authorization submission** *(shown)*
-2. **Claims submission and denial appeals**
-3. **Eligibility verification and benefit checks**
-4. **Patient intake and referral routing**
+## Tamper test
 
-Voice scheduling, ambient documentation, and back-office coding extend
-the same primitive at lower stakes.
+```bash
+echo X >> sample_output/receipts/00001.json.payload
+bash ../verify.sh    # fails at step 2
+git checkout sample_output/receipts/00001.json.payload
+bash ../verify.sh    # passes again
+```
 
-## What changes for the people downstream
+That's "we'd notice," made true.
 
-When something goes wrong — a denial, an audit, a patient question —
-the clinic answers it themselves. They don't take your word; you don't
-have to defend it. The receipt does both jobs.
+---
 
-- *GTM:* turns "let me check our logs and get back to you" into "here's the file, run one bash command"
-- *Security:* the clinic owns the evidence, not the vendor — the audit chain stops at the customer
+## Run it fresh (optional)
+
+```bash
+pip install -r requirements.txt
+python run_demo.py
+```
+
+Python 3.8+, openssl 3.0+, jq.
+
+---
+
+## Engineering properties
+
+- **Install:** two pure-Python deps (`cryptography`, `rich`). No system packages, no Docker.
+- **Crypto:** Ed25519, SHA-256, canonical JSON. Standard primitives via Python's `cryptography` library — same one Django and AWS CLI use.
+- **Surface area:** 225 lines for the demo, 60 for the verifier. Audit-readable in an afternoon. Production library: 184 tests, MIT.
+- **Scaling:** one receipt or a billion, same primitive. Append-only JSON, your existing S3 + lifecycle policy handles storage.
+- **Verification cost:** O(1) per receipt for signature + hash. Chain validation is O(n), trivially parallel.
+- **Vendor dependency at verify-time:** zero.
+
+---
+
+## Workflows it covers
+
+1. Prior authorization submission *(shown)*
+2. Claims submission and denial appeals
+3. Eligibility verification and benefit checks
+4. Patient intake and referral routing
+
+Same primitive, different `action` strings and payload schemas.
+
+---
+
+## What it is
+
+The no-BS trust report your agent produces for the clinic — that the clinic hands to a payer, a hospital network, an auditor, or a carrier without you in the loop. Same evidence, every audience, no rebuilding.
+
+Not a SOC 2 platform, not a HITRUST cert, not a replacement for Vanta or Drata. Plugs in alongside them — the agent-action evidence layer those products don't produce on their own.
+
+---
+
+## What's in this folder
+
+- `sample_output/` — pre-generated receipt + key, verifiable without running anything
+- `run_demo.py` — generate a fresh receipt
+- `verify.sh` — the offline verifier
+- `controls.md` — HIPAA + HITRUST CSF v11 mappings
+- `requirements.txt` — two dependencies
+
+---
 
 ## Repo
 
-[github.com/aniketh-maddipati/agentmint-python](https://github.com/aniketh-maddipati/agentmint-python)
+[github.com/aniketh-maddipati/agentmint-python](https://github.com/aniketh-maddipati/agentmint-python) — production library, 184 tests, MIT-licensed.
+
+Threat model pressure-tested with [Bil Harmer](https://www.linkedin.com/in/bilharmer/) (5x CISO). Schema submitted as input to the [OWASP Agentic AI Security Top 10](https://genai.owasp.org/) led by [Ken Huang](https://www.linkedin.com/in/kenhuang8/). [Prescient Assurance](https://prescientassurance.com) (AIUC-1 audit firm) is evaluating the primitive in their healthcare AI cohort.
