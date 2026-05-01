@@ -1,10 +1,10 @@
 # AgentMint :: signed receipts for AI agent actions
 
-**Small company, big-company trust.** A 5-file demo of cryptographic receipts
-for AI agent actions in healthcare admin workflows — prior authorization,
-eligibility verification, referral routing, voice-agent scheduling. Runs
-offline in under 2 seconds. The customer holds the key, the vendor never
-sees it. An auditor verifies offline with `openssl` alone.
+A 5-file demo of cryptographic receipts for AI agent actions in healthcare
+admin workflows — prior authorization, eligibility verification, referral
+routing, voice-agent scheduling. Runs offline in under 2 seconds. The
+customer holds the key, the vendor never sees it. An auditor verifies
+offline with `openssl` alone.
 
 ---
 
