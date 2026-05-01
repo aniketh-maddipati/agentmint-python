@@ -4,7 +4,8 @@
 
 **Goal:** Get the first agent deal closed faster, with trust that compounds across every deal after.
 
-A working primitive for cryptographic evidence of what your AI agent did. Customer holds the key. Vendor never sees it. Anyone verifies offline. Healthcare admin actions as the example — the primitive works for any agent action.
+A working primitive for cryptographic evidence of what your AI agent did. Customer holds the key. Vendor never sees it. Anyone can verify offline. 
+Healthcare admin actions as an example but the primitive works for any agent action.
 
 ---
 
@@ -33,22 +34,28 @@ Zero PHI — hashes only. Signed with Ed25519. Chain-linked via `previous_receip
 
 ## Try it
 
-One CLI wraps everything:
+## Download and run
 
 ```bash
-./agentmint verify    # verify the pre-generated sample (no Python)
-./agentmint tamper    # flip a byte, watch it fail, restore, watch it pass
-./agentmint demo      # generate a fresh receipt with Python
-./agentmint all       # run all three in sequence
+curl -LO https://github.com/aniketh-maddipati/agentmint-python/raw/main/examples/specialty_clinic_evidence_artifact/agentmint-evidence-demo.tar.gz
+tar -xzf agentmint-evidence-demo.tar.gz
+cd agentmint-evidence-demo
+./agentmint verify
 ```
 
-`./agentmint verify` is the fastest path to seeing it work. Requires `openssl`, `jq`, and `sha256sum` — already on most macOS and Linux systems.
+That's it. Three commands, no Python, no install. Verifies a real signed receipt against a real public key in about 2 seconds.
 
-`./agentmint demo` requires Python 3.8+ and creates a fresh keypair and receipt. Optional — the pre-generated sample is enough to evaluate the primitive.
+Then optionally:
+
+```bash
+./agentmint tamper    # flip a byte, watch verify fail, restore, watch it pass
+./agentmint demo      # generate a fresh receipt (requires Python 3.8+)
+./agentmint all       # all three in sequence
+```
 
 ---
 
-## Engineering properties
+## Things you'd like to know
 
 - **Install:** two pure-Python deps (`cryptography`, `rich`). No system packages, no Docker.
 - **Crypto:** Ed25519, SHA-256, canonical JSON. Standard primitives via Python's `cryptography` library — same one Django and AWS CLI use.
@@ -59,7 +66,7 @@ One CLI wraps everything:
 
 ---
 
-## Workflows it covers
+## Workflows Covered
 
 1. Prior authorization submission *(shown)*
 2. Claims submission and denial appeals
@@ -70,9 +77,9 @@ Same primitive, different `action` strings and payload schemas.
 
 ---
 
-## What it is
+## Why
 
-The no-BS trust report your agent produces for the clinic — that the clinic hands to a payer, a hospital network, an auditor, or a carrier without you in the loop. Same evidence, every audience, no rebuilding.
+no-BS evidence report your agent produces for the clinic - that the clinic hands to a payer, a hospital network, an auditor, or an insurnance carrier without you in the loop. Independently verfiable, no need to compensate with compliance infrastructure. Extend the spec up and down the stack and control map and let the agent to the work.
 
 Not a SOC 2 platform, not a HITRUST cert, not a replacement for Vanta or Drata. Plugs in alongside them — the agent-action evidence layer those products don't produce on their own.
 
@@ -90,6 +97,6 @@ Not a SOC 2 platform, not a HITRUST cert, not a replacement for Vanta or Drata. 
 
 ## Repo
 
-[github.com/aniketh-maddipati/agentmint-python](https://github.com/aniketh-maddipati/agentmint-python) — production library, 184 tests, MIT-licensed.
+[github.com/aniketh-maddipati/agentmint-python](https://github.com/aniketh-maddipati/agentmint-python)
 
-Threat model pressure-tested with [Bil Harmer](https://www.linkedin.com/in/bilharmer/) (5x CISO). Schema submitted as input to the [OWASP Agentic AI Security Top 10](https://genai.owasp.org/) led by [Ken Huang](https://www.linkedin.com/in/kenhuang8/). [Prescient Assurance](https://prescientassurance.com) (AIUC-1 audit firm) is evaluating the primitive in their healthcare AI cohort.
+Threat modeled with [Bil Harmer](https://www.linkedin.com/in/bilharmer/). Primitive listed in [OWASP Agentic AI Security Top 10](https://genai.owasp.org/) led by [Ken Huang](https://www.linkedin.com/in/kenhuang8/). [Prescient Assurance](https://prescientassurance.com) (AIUC-1 audit firm) is evaluating the primitive in their healthcare AI cohort.
