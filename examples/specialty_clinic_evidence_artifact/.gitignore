@@ -1,0 +1,6 @@
+keys/
+receipts/
+.venv/
+__pycache__/
+*.pyc
+_ship.sh
