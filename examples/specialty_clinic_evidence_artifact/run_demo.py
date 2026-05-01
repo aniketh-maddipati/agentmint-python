@@ -218,7 +218,7 @@ def main() -> None:
     phase_4()
     control_table()
     console.print()
-    console.print("[bold green]Artifact ready. Send to vendor security review.[/bold green]")
+    console.print("[bold green]Receipt verified end-to-end.[/bold green]")
 
 
 if __name__ == "__main__":
