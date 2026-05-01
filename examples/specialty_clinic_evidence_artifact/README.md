@@ -2,7 +2,7 @@
 
 **Small teams should have big-company trust. Period.**
 
-**Goal:** get the first agent deal closed faster, with trust that compounds across every deal after.
+**Goal:** Get the first agent deal closed faster, with trust that compounds across every deal after.
 
 A working primitive for cryptographic evidence of what your AI agent did. Customer holds the key. Vendor never sees it. Anyone verifies offline. Healthcare admin actions as the example — the primitive works for any agent action.
 
