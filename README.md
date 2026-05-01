@@ -1,6 +1,6 @@
 # AgentMint
 
-### The trust protocol for the agentic internet.
+### Evidence Layer for AI Agent Actions
 
 AI agents are processing insurance claims, screening transactions, filing appeals, and moving money. **None of them can prove what they did.** AgentMint gives every agent a verifiable track record — so it earns trust on its own merits, not on a GRC checklist someone filled out six months ago.
 
