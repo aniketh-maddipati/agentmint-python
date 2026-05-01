@@ -7,7 +7,7 @@
 | §164.312(b) | Audit Controls | Each agent action emits a signed receipt persisted to a customer-controlled store, producing the immutable audit record the rule requires. |
 | §164.312(c)(1) | Integrity | Ed25519 signature over the canonical receipt detects any post-hoc alteration of the action record. |
 | §164.312(d) | Person or Entity Authentication | The receipt cryptographically binds the action to a named agent identity verifiable against a customer-held public key. |
-| §164.316(b)(2)(i) | Time Limit | Receipts are append-only files retained on customer infrastructure; AgentMint imposes no upper bound on retention. |
+| §164.316(b)(2)(i) | Time Limit | Receipts are append-only and retained on customer infrastructure for as long as the customer requires; AgentMint does not delete or expire them. |
 
 ## HITRUST CSF v11
 

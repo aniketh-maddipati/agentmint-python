@@ -33,7 +33,7 @@ Phase 4 :: Verify offline with openssl
   ✓ Receipt verifies offline. No AgentMint binary required.
 ```
 
-The receipt itself contains zero PHI — only hashes:
+The receipt itself contains zero PHI — only hashes. Your hash and timestamp will differ when you run it; the structure is what matters:
 
 ```json
 {
@@ -66,7 +66,7 @@ pip install -r requirements.txt
 python run_demo.py && bash verify.sh
 ```
 
-Requires: Python 3.9+, openssl 3.0+, jq.
+Requires: Python 3.8+, openssl 3.0+, jq.
 
 ---
 
