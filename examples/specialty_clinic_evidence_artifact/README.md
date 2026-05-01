@@ -31,43 +31,20 @@ Zero PHI — hashes only. Signed with Ed25519. Chain-linked via `previous_receip
 
 ---
 
-## Verify it
+## Try it
 
-`sample_output/` has a real receipt, signature, payload, and public key already generated. Verify with one command — no Python:
-
-```bash
-cd sample_output
-bash ../verify.sh
-```
-Step 1 :: Ed25519 signature  → OK
-Step 2 :: payload SHA-256    → OK
-Step 3 :: result             → Receipt verifies offline
-
-`openssl` + `jq` + `sha256sum`. Air-gapped, deterministic, anyone with the public key can do it.
-
----
-
-## Tamper test
+One CLI wraps everything:
 
 ```bash
-echo X >> sample_output/receipts/00001.json.payload
-bash ../verify.sh    # fails at step 2
-git checkout sample_output/receipts/00001.json.payload
-bash ../verify.sh    # passes again
+./agentmint verify    # verify the pre-generated sample (no Python)
+./agentmint tamper    # flip a byte, watch it fail, restore, watch it pass
+./agentmint demo      # generate a fresh receipt with Python
+./agentmint all       # run all three in sequence
 ```
 
-That's "we'd notice," made true.
+`./agentmint verify` is the fastest path to seeing it work. Requires `openssl`, `jq`, and `sha256sum` — already on most macOS and Linux systems.
 
----
-
-## Run it fresh (optional)
-
-```bash
-pip install -r requirements.txt
-python run_demo.py
-```
-
-Python 3.8+, openssl 3.0+, jq.
+`./agentmint demo` requires Python 3.8+ and creates a fresh keypair and receipt. Optional — the pre-generated sample is enough to evaluate the primitive.
 
 ---
 

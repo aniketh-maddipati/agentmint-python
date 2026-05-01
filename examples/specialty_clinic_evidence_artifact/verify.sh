@@ -16,11 +16,24 @@
 
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PUB="$ROOT/keys/public.pem"
-RCPT="$ROOT/receipts/00001.json"
-SIG="$ROOT/receipts/00001.json.sig"
-PAYLOAD="$ROOT/receipts/00001.json.payload"
+# Resolve paths against the current working directory so verify.sh
+# can be run from any directory containing keys/ and receipts/.
+# Examples:
+#   cd sample_output && bash ../verify.sh
+#   bash verify.sh   (after running run_demo.py from artifact root)
+PUB="keys/public.pem"
+RCPT="receipts/00001.json"
+SIG="receipts/00001.json.sig"
+PAYLOAD="receipts/00001.json.payload"
+
+for f in "$PUB" "$RCPT" "$SIG" "$PAYLOAD"; do
+  if [ ! -f "$f" ]; then
+    echo "ERROR: $f not found in $(pwd)"
+    echo "Run from a directory containing keys/ and receipts/"
+    echo "  e.g., cd sample_output && bash ../verify.sh"
+    exit 10
+  fi
+done
 
 require() {
   command -v "$1" >/dev/null 2>&1 || { echo "ERROR: '$1' not found on PATH"; exit 10; }

@@ -1,0 +1,128 @@
+#!/usr/bin/env bash
+set -uo pipefail
+cd "$(dirname "$0")"
+
+if [ -t 1 ]; then
+  BOLD=$(tput bold); DIM=$(tput dim); RED=$(tput setaf 1)
+  GRN=$(tput setaf 2); YEL=$(tput setaf 3); RST=$(tput sgr0)
+else
+  BOLD=""; DIM=""; RED=""; GRN=""; YEL=""; RST=""
+fi
+
+heading() { echo; echo "${BOLD}-- $1 --${RST}"; }
+ok()      { echo "  ${GRN}OK${RST} $1"; }
+fail()    { echo "  ${RED}FAIL${RST} $1"; }
+hint()    { echo "  ${DIM}-> $1${RST}"; }
+
+show_help() {
+  cat <<HELP
+agentmint -- cryptographic receipts for AI agent actions
+
+Usage: ./agentmint <command>
+
+Commands:
+  verify   Verify the pre-generated receipt in sample_output/ (no Python).
+  tamper   Flip a byte, watch verify fail, restore, watch it pass.
+  demo     Generate a fresh receipt with run_demo.py (Python required).
+  all      Run verify, tamper, demo in sequence.
+  help     Show this message.
+
+Requirements:
+  verify, tamper:  openssl, jq, sha256sum (or shasum on macOS)
+  demo:            Python 3.8+, pip
+HELP
+}
+
+check_tools() {
+  local missing=()
+  command -v openssl >/dev/null 2>&1 || missing+=("openssl")
+  command -v jq      >/dev/null 2>&1 || missing+=("jq")
+  command -v sha256sum >/dev/null 2>&1 || command -v shasum >/dev/null 2>&1 || missing+=("sha256sum")
+  if [ ${#missing[@]} -gt 0 ]; then
+    fail "missing tools: ${missing[*]}"
+    case "$(uname -s)" in
+      Darwin) hint "macOS install: brew install ${missing[*]}" ;;
+      Linux)  hint "Linux install: apt install ${missing[*]}" ;;
+    esac
+    return 1
+  fi
+  return 0
+}
+
+cmd_verify() {
+  heading "Verify pre-generated receipt"
+  check_tools || return 1
+  if [ ! -d "sample_output" ]; then
+    fail "sample_output/ not found"
+    return 1
+  fi
+  (cd sample_output && bash ../verify.sh) || { fail "verification failed"; return 1; }
+  ok "all checks passed"
+  hint "next: ./agentmint tamper"
+}
+
+cmd_tamper() {
+  heading "Tamper test"
+  check_tools || return 1
+  local payload="sample_output/receipts/00001.json.payload"
+  [ -f "$payload" ] || { fail "payload not found"; return 1; }
+
+  cp "$payload" "${payload}.bak"
+  echo "  Step 1: append one byte"
+  printf 'X' >> "$payload"
+
+  echo "  Step 2: verify (expecting failure)"
+  if (cd sample_output && bash ../verify.sh >/dev/null 2>&1); then
+    fail "verify still passed -- restoring"
+    mv "${payload}.bak" "$payload"
+    return 1
+  fi
+  ok "verification failed as expected"
+
+  echo "  Step 3: restore byte"
+  mv "${payload}.bak" "$payload"
+
+  echo "  Step 4: verify (expecting success)"
+  if (cd sample_output && bash ../verify.sh >/dev/null 2>&1); then
+    ok "verification passes again"
+  else
+    fail "verify failed after restore"
+    return 1
+  fi
+  ok "tamper test complete"
+  hint "next: ./agentmint demo"
+}
+
+cmd_demo() {
+  heading "Generate and verify a fresh receipt"
+  if ! command -v python3 >/dev/null 2>&1; then
+    fail "python3 not found"
+    return 1
+  fi
+  if [ ! -d ".venv" ]; then
+    python3 -m venv .venv || { fail "venv creation failed"; return 1; }
+  fi
+  source .venv/bin/activate
+  pip install -q -r requirements.txt || { fail "pip install failed"; return 1; }
+  ok "deps installed"
+  python run_demo.py || { fail "demo script failed"; return 1; }
+  bash verify.sh || { fail "verify.sh failed"; return 1; }
+  ok "fresh receipt generated and verified"
+}
+
+cmd_all() {
+  cmd_verify || return 1
+  cmd_tamper || return 1
+  cmd_demo   || return 1
+  heading "All checks complete"
+  ok "verified, tampered, generated fresh"
+}
+
+case "${1:-help}" in
+  verify) cmd_verify ;;
+  tamper) cmd_tamper ;;
+  demo)   cmd_demo   ;;
+  all)    cmd_all    ;;
+  help|-h|--help) show_help ;;
+  *) fail "unknown command: $1"; show_help; exit 1 ;;
+esac
