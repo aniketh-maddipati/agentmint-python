@@ -21,15 +21,18 @@ agentmint -- cryptographic receipts for AI agent actions
 Usage: ./agentmint <command>
 
 Commands:
-  verify   Verify the pre-generated receipt in sample_output/ (no Python).
-  tamper   Flip a byte, watch verify fail, restore, watch it pass.
-  demo     Generate a fresh receipt with run_demo.py (Python required).
-  all      Run verify, tamper, demo in sequence.
-  help     Show this message.
+  show      Print the receipt JSON, signature length, public key
+            fingerprint, and a field-by-field walkthrough.
+  verify    Verify the pre-generated receipt in sample_output/ (no Python).
+  tamper    Flip a byte, watch verify fail, restore, watch it pass.
+  controls  Print HIPAA + HITRUST control mappings from controls.md.
+  demo      Generate a fresh receipt with run_demo.py (Python required).
+  all       Run verify, tamper, demo in sequence.
+  help      Show this message.
 
 Requirements:
   verify, tamper:  openssl, jq, sha256sum (or shasum on macOS)
-  demo:            Python 3.8+, pip
+  demo:            Python 3.9+, pip
 HELP
 }
 
@@ -56,9 +59,24 @@ cmd_verify() {
     fail "sample_output/ not found"
     return 1
   fi
+
+  # Show what's being verified before we verify
+  local rcpt="sample_output/receipts/00001.json"
+  if [ -f "$rcpt" ] && command -v jq >/dev/null 2>&1; then
+    local action ts agent
+    action=$(jq -r '.action' "$rcpt")
+    ts=$(jq -r '.timestamp' "$rcpt")
+    agent=$(jq -r '.agent_id' "$rcpt")
+    echo "  Verifying receipt:"
+    echo "    action:    $action"
+    echo "    agent_id:  $agent"
+    echo "    signed at: $ts"
+    echo
+  fi
+
   (cd sample_output && bash ../verify.sh) || { fail "verification failed"; return 1; }
   ok "all checks passed"
-  hint "next: ./agentmint tamper"
+  hint "next: ./agentmint show (or ./agentmint tamper)"
 }
 
 cmd_tamper() {
@@ -97,8 +115,22 @@ cmd_demo() {
   heading "Generate and verify a fresh receipt"
   if ! command -v python3 >/dev/null 2>&1; then
     fail "python3 not found"
+    hint "install Python 3.9+ from python.org or your package manager"
     return 1
   fi
+
+  # Check Python version >= 3.9 (cryptography library requires it)
+  PY_VER=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null)
+  PY_MAJOR=${PY_VER%%.*}
+  PY_MINOR=${PY_VER##*.}
+  if [ "$PY_MAJOR" -lt 3 ] || { [ "$PY_MAJOR" -eq 3 ] && [ "$PY_MINOR" -lt 9 ]; }; then
+    fail "python3 is $PY_VER — need 3.9+"
+    hint "macOS: brew install python@3.12  (then 'rm -rf .venv && ./agentmint demo')"
+    hint "or use pyenv: pyenv install 3.12 && pyenv local 3.12"
+    return 1
+  fi
+  ok "python3 $PY_VER"
+
   if [ ! -d ".venv" ]; then
     python3 -m venv .venv || { fail "venv creation failed"; return 1; }
   fi
@@ -118,11 +150,62 @@ cmd_all() {
   ok "verified, tampered, generated fresh"
 }
 
+cmd_show() {
+  heading "What's in the pre-generated receipt"
+  if [ ! -d "sample_output" ]; then
+    fail "sample_output/ not found"
+    return 1
+  fi
+  command -v jq >/dev/null 2>&1 || { fail "jq required"; return 1; }
+
+  local rcpt="sample_output/receipts/00001.json"
+  local sig="sample_output/receipts/00001.json.sig"
+  local pub="sample_output/keys/public.pem"
+
+  echo
+  echo "  Receipt JSON ($rcpt):"
+  echo
+  jq . "$rcpt" | sed 's/^/    /'
+  echo
+  echo "  Signature: $(wc -c < "$sig" | tr -d " ") bytes (raw Ed25519, RFC 8032)"
+  echo
+  echo "  Public key fingerprint:"
+  echo "    SHA-256: $(openssl pkey -pubin -in "$pub" -outform DER 2>/dev/null | shasum -a 256 | awk "{print \$1}" | head -c 32)..."
+  echo
+  echo "  Field walkthrough:"
+  echo "    action               → what the agent did (workflow-specific string)"
+  echo "    agent_id             → which agent took the action"
+  echo "    payload_sha256       → hash of the action's payload (no PHI on the wire)"
+  echo "    previous_receipt_hash → chain link; GENESIS for the first receipt"
+  echo "    public_key_id        → which customer key signed this"
+  echo "    receipt_id           → monotonic counter"
+  echo "    signature_alg        → ed25519 (always)"
+  echo "    subject_ref          → hashed reference to the subject (e.g., patient ID)"
+  echo "    timestamp            → ISO-8601 UTC, signed in the canonical bytes"
+  echo "    version              → schema version (1.0)"
+  echo
+  hint "next: ./agentmint verify (then ./agentmint controls)"
+}
+
+cmd_controls() {
+  heading "Compliance control mappings"
+  if [ ! -f "controls.md" ]; then
+    fail "controls.md not found"
+    return 1
+  fi
+  echo
+  cat controls.md | sed 's/^/  /'
+  echo
+  hint "see README.md for context on demonstrated vs enabled scope"
+}
+
 case "${1:-help}" in
-  verify) cmd_verify ;;
-  tamper) cmd_tamper ;;
-  demo)   cmd_demo   ;;
-  all)    cmd_all    ;;
+  verify)   cmd_verify   ;;
+  tamper)   cmd_tamper   ;;
+  demo)     cmd_demo     ;;
+  show)     cmd_show     ;;
+  controls) cmd_controls ;;
+  all)      cmd_all      ;;
   help|-h|--help) show_help ;;
   *) fail "unknown command: $1"; show_help; exit 1 ;;
 esac

@@ -49,7 +49,7 @@ Then optionally:
 
 ```bash
 ./agentmint tamper    # flip a byte, watch verify fail, restore, watch it pass
-./agentmint demo      # generate a fresh receipt (requires Python 3.8+)
+./agentmint demo      # generate a fresh receipt (requires Python 3.9+)
 ./agentmint all       # all three in sequence
 ```
 
