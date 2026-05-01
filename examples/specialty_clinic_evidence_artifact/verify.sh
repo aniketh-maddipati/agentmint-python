@@ -38,7 +38,7 @@ fi
 
 OSSL_VER="$(openssl version | awk '{print $2}')"
 case "$OSSL_VER" in
-  3.*|4.*) ;;
+  3.*) ;;
   *) echo "ERROR: openssl $OSSL_VER detected; need 3.0 or newer for Ed25519 -rawin"; exit 11 ;;
 esac
 
